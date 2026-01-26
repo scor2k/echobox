@@ -20,7 +20,9 @@ COPY internal/ ./internal/
 COPY web/ ./web/
 
 # Build the binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+# Use TARGETARCH build arg to support multi-platform builds
+ARG TARGETARCH=arm64
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build \
     -ldflags="-s -w -X main.Version=${VERSION:-dev}" \
     -o echobox \
     ./cmd/server
