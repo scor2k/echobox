@@ -61,6 +61,11 @@ COPY --from=builder /build/echobox /app/echobox
 # Copy web assets
 COPY web/ /app/web/
 
+# Verify web assets copied correctly
+RUN ls -la /app/web/ && \
+    ls -la /app/web/vendor/ && \
+    echo "Web assets copied successfully"
+
 # Set permissions
 RUN chmod +x /app/echobox && \
     chown -R candidate:candidate /app
