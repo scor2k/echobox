@@ -147,9 +147,9 @@ tidy: ## Tidy go.mod
 .PHONY: docker-build
 docker-build: ## Build Docker image
 	@echo "$(COLOR_BLUE)Building Docker image...$(COLOR_RESET)"
-	@docker build -t echobox:latest .
+	@docker build -t echobox:latest -t echobox:dev .
 	@docker images echobox:latest
-	@echo "$(COLOR_GREEN)✓ Docker image built: echobox:latest$(COLOR_RESET)"
+	@echo "$(COLOR_GREEN)✓ Docker image built: echobox:latest, echobox:dev$(COLOR_RESET)"
 
 .PHONY: docker-build-prod
 docker-build-prod: ## Build production Docker image with optimizations
@@ -179,14 +179,14 @@ docker-run: docker-build ## Build and run Docker container
 		echobox:latest
 
 .PHONY: docker-run-prod
-docker-run-prod: ## Run production container with strict security
+docker-run-prod: docker-build-prod ## Build and run production container with strict security
 	@echo "$(COLOR_BLUE)Starting production container...$(COLOR_RESET)"
 	@mkdir -p sessions tasks
 	@docker run -d \
 		-p 8080:8080 \
 		-v $(PWD)/sessions:/output \
 		-v $(PWD)/tasks:/tasks:ro \
-		-e CANDIDATE_NAME="${CANDIDATE_NAME}" \
+		-e CANDIDATE_NAME="${CANDIDATE_NAME:-prod_candidate}" \
 		-e SESSION_TIMEOUT=7200 \
 		--memory="512m" \
 		--memory-reservation="256m" \
@@ -197,10 +197,11 @@ docker-run-prod: ## Run production container with strict security
 		--cap-add=SETUID \
 		--cap-add=SETGID \
 		--restart=no \
-		--name echobox-${CANDIDATE_NAME} \
-		echobox:latest
+		--name echobox-prod-$(shell date +%s) \
+		echobox:prod
 	@echo "$(COLOR_GREEN)✓ Production container started$(COLOR_RESET)"
-	@echo "$(COLOR_YELLOW)Container ID: $(shell docker ps -q -f name=echobox-${CANDIDATE_NAME})$(COLOR_RESET)"
+	@echo "$(COLOR_YELLOW)Container: $(shell docker ps --format '{{.Names}}' -f name=echobox-prod | head -1)$(COLOR_RESET)"
+	@echo "$(COLOR_YELLOW)URL: http://localhost:8080$(COLOR_RESET)"
 
 .PHONY: docker-compose-up
 docker-compose-up: ## Start with docker-compose (development)
