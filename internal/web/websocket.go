@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/websocket"
 
+	"github.com/akonyukov/echobox/internal/anticheat"
 	"github.com/akonyukov/echobox/internal/terminal"
 )
 
@@ -37,16 +38,18 @@ type ResizeData struct {
 type WSHandler struct {
 	pty          *terminal.PTY
 	recorder     *terminal.Recorder
+	detector     *anticheat.Detector
 	mu           sync.RWMutex
 	shutdown     chan struct{}
 	finishSignal chan struct{}
 }
 
 // NewWSHandler creates a new WebSocket handler
-func NewWSHandler(pty *terminal.PTY, recorder *terminal.Recorder) *WSHandler {
+func NewWSHandler(pty *terminal.PTY, recorder *terminal.Recorder, detector *anticheat.Detector) *WSHandler {
 	return &WSHandler{
 		pty:          pty,
 		recorder:     recorder,
+		detector:     detector,
 		shutdown:     make(chan struct{}),
 		finishSignal: make(chan struct{}, 1),
 	}
@@ -168,7 +171,24 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 						log.Printf("Error handling message: %v", err)
 					}
 				} else {
-					// Plain text input - write to PTY
+					// Plain text input - check anti-cheat first
+					if h.detector != nil {
+						allowed, violations := h.detector.CheckInput(data)
+						if !allowed {
+							log.Printf("Anti-cheat: Input blocked")
+							// Don't process this input
+							continue
+						}
+
+						// Log violations
+						for _, violation := range violations {
+							if h.recorder != nil {
+								eventJSON, _ := json.Marshal(violation)
+								h.recorder.RecordEvent("anticheat_violation", string(eventJSON))
+							}
+						}
+					}
+
 					// Record keystroke input
 					if h.recorder != nil {
 						if err := h.recorder.RecordInput(data); err != nil {
@@ -241,10 +261,27 @@ func (h *WSHandler) handleMessage(msg *Message) error {
 		return nil
 
 	case "anticheat":
-		// Record anti-cheat event
-		if h.recorder != nil {
-			if err := h.recorder.RecordEvent("anticheat", string(msg.Data)); err != nil {
-				log.Printf("Failed to record anticheat event: %v", err)
+		// Parse client anti-cheat event
+		var clientEvent map[string]interface{}
+		if err := json.Unmarshal(msg.Data, &clientEvent); err != nil {
+			log.Printf("Failed to parse anticheat event: %v", err)
+			return err
+		}
+
+		// Process with detector
+		if h.detector != nil {
+			eventType := ""
+			if et, ok := clientEvent["event"].(string); ok {
+				eventType = et
+			}
+			event := h.detector.RecordClientEvent(eventType, clientEvent)
+
+			// Record to file
+			if h.recorder != nil {
+				eventJSON, _ := json.Marshal(event)
+				if err := h.recorder.RecordEvent("client_anticheat", string(eventJSON)); err != nil {
+					log.Printf("Failed to record anticheat event: %v", err)
+				}
 			}
 		}
 		return nil

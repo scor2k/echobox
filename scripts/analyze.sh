@@ -129,6 +129,51 @@ if [ -f "$KEYSTROKES_LOG" ]; then
     echo ""
 fi
 
+# Anti-cheat analysis report
+ANALYSIS_REPORT="$SESSION_DIR/analysis.json"
+if [ -f "$ANALYSIS_REPORT" ] && command -v jq &> /dev/null; then
+    echo -e "${YELLOW}Anti-Cheat Analysis Report:${NC}"
+    VERDICT=$(jq -r '.verdict // "N/A"' "$ANALYSIS_REPORT")
+    CONFIDENCE=$(jq -r '.confidence_score // 0' "$ANALYSIS_REPORT")
+
+    # Color code verdict
+    case "$VERDICT" in
+        "CLEAN")
+            VERDICT_COLOR="${GREEN}"
+            ;;
+        "MINOR_CONCERNS")
+            VERDICT_COLOR="${YELLOW}"
+            ;;
+        "REVIEW_RECOMMENDED"|"SUSPICIOUS")
+            VERDICT_COLOR="${RED}"
+            ;;
+        *)
+            VERDICT_COLOR="${NC}"
+            ;;
+    esac
+
+    echo -e "  Verdict:      ${VERDICT_COLOR}${VERDICT}${NC}"
+    echo -e "  Confidence:   $(echo "$CONFIDENCE * 100" | bc 2>/dev/null || echo "$CONFIDENCE")%"
+
+    # Show flags if any
+    FLAGS=$(jq -r '.flags[]' "$ANALYSIS_REPORT" 2>/dev/null)
+    if [ -n "$FLAGS" ]; then
+        echo -e "  Flags:"
+        echo "$FLAGS" | while read -r flag; do
+            echo "    - $flag"
+        done
+    fi
+
+    # Show typing stats from report
+    AVG_WPM=$(jq -r '.typing_stats.average_wpm // 0' "$ANALYSIS_REPORT")
+    MAX_WPM=$(jq -r '.typing_stats.max_wpm // 0' "$ANALYSIS_REPORT")
+    if [ "$AVG_WPM" != "0" ]; then
+        printf "  Typing:       %.1f WPM avg, %.1f WPM max\n" "$AVG_WPM" "$MAX_WPM"
+    fi
+
+    echo ""
+fi
+
 # Summary
 echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}Analysis complete!${NC}"
@@ -138,6 +183,9 @@ echo "  Keystrokes:   less $SESSION_DIR/keystrokes.log"
 echo "  Events:       less $SESSION_DIR/events.log"
 echo "  WebSocket:    less $SESSION_DIR/websocket.log"
 echo "  Commands:     cat $SESSION_DIR/commands.log"
+if [ -f "$ANALYSIS_REPORT" ]; then
+    echo "  Analysis:     cat $SESSION_DIR/analysis.json | jq"
+fi
 echo ""
 echo "Replay session:"
 echo "  ./scripts/replay.sh $SESSION_DIR"
