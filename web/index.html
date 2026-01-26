@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRE Interview Terminal</title>
+    <link rel="stylesheet" href="/vendor/xterm.min.css">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="header">
+        <div class="header-content">
+            <h1>SRE Technical Interview</h1>
+            <div class="header-controls">
+                <div id="status" class="status">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">Connecting...</span>
+                </div>
+                <button id="finish-btn" class="btn btn-finish" disabled>Finish Session</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-container">
+        <div id="terminal-container">
+            <div id="terminal"></div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal">
+        <div class="modal-content">
+            <h2>Finish Session?</h2>
+            <p>Are you sure you want to end your interview session?</p>
+            <p class="modal-warning">This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button id="modal-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="modal-confirm" class="btn btn-primary">Finish Session</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/vendor/xterm.min.js"></script>
+    <script src="/vendor/xterm-addon-fit.min.js"></script>
+    <script src="/terminal.js"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+
+# IDE
+.idea/
+.vscode/
+
+# Session outputs
+sessions/
+output/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+echobox
+server
+
+# Logs
+*.log
+
+# Plans
+plan.md
