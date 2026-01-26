@@ -17,7 +17,9 @@
 go.work
 
 # Dependency directories
-vendor/
+# vendor/  # Commented out - we need web/vendor/ for xterm.js
+# Exclude Go vendor but not web/vendor
+/vendor/
 
 # IDE
 .idea/
