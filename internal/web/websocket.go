@@ -36,15 +36,17 @@ type ResizeData struct {
 // WSHandler handles WebSocket connections
 type WSHandler struct {
 	pty          *terminal.PTY
+	recorder     *terminal.Recorder
 	mu           sync.RWMutex
 	shutdown     chan struct{}
 	finishSignal chan struct{}
 }
 
 // NewWSHandler creates a new WebSocket handler
-func NewWSHandler(pty *terminal.PTY) *WSHandler {
+func NewWSHandler(pty *terminal.PTY, recorder *terminal.Recorder) *WSHandler {
 	return &WSHandler{
 		pty:          pty,
+		recorder:     recorder,
 		shutdown:     make(chan struct{}),
 		finishSignal: make(chan struct{}, 1),
 	}
@@ -101,6 +103,13 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if n > 0 {
+				// Record terminal output
+				if h.recorder != nil {
+					if err := h.recorder.RecordOutput(buf[:n]); err != nil {
+						log.Printf("Failed to record output: %v", err)
+					}
+				}
+
 				writeMu.Lock()
 				err := conn.WriteMessage(websocket.TextMessage, buf[:n])
 				writeMu.Unlock()
@@ -138,6 +147,17 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			// Record WebSocket message
+			if h.recorder != nil {
+				msgTypeStr := "text"
+				if messageType == websocket.BinaryMessage {
+					msgTypeStr = "binary"
+				}
+				if err := h.recorder.RecordWebSocketMessage("client->server", msgTypeStr, data); err != nil {
+					log.Printf("Failed to record WebSocket message: %v", err)
+				}
+			}
+
 			switch messageType {
 			case websocket.TextMessage:
 				// Check if it's a JSON message (for resize, finish, etc.)
@@ -149,6 +169,13 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 					}
 				} else {
 					// Plain text input - write to PTY
+					// Record keystroke input
+					if h.recorder != nil {
+						if err := h.recorder.RecordInput(data); err != nil {
+							log.Printf("Failed to record input: %v", err)
+						}
+					}
+
 					if _, err := h.pty.Write(data); err != nil {
 						log.Printf("PTY write error: %v", err)
 						select {
@@ -162,6 +189,13 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 				}
 
 			case websocket.BinaryMessage:
+				// Record binary input
+				if h.recorder != nil {
+					if err := h.recorder.RecordInput(data); err != nil {
+						log.Printf("Failed to record input: %v", err)
+					}
+				}
+
 				// Write binary data directly to PTY
 				if _, err := h.pty.Write(data); err != nil {
 					log.Printf("PTY write error: %v", err)
@@ -207,8 +241,12 @@ func (h *WSHandler) handleMessage(msg *Message) error {
 		return nil
 
 	case "anticheat":
-		// Log anti-cheat event (will be properly logged in Phase 2)
-		log.Printf("Anti-cheat event: %s", string(msg.Data))
+		// Record anti-cheat event
+		if h.recorder != nil {
+			if err := h.recorder.RecordEvent("anticheat", string(msg.Data)); err != nil {
+				log.Printf("Failed to record anticheat event: %v", err)
+			}
+		}
 		return nil
 
 	default:
