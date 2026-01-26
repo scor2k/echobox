@@ -426,6 +426,7 @@ See [tasks/README.md](tasks/README.md) for candidate instructions.
 - **[SECURITY.md](SECURITY.md)** - Security model and best practices (401 lines)
 - **[RECORDING.md](RECORDING.md)** - Session recording details
 - **[TIMEOUTS.md](TIMEOUTS.md)** - Timeout configuration reference
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions (560 lines)
 
 ## Testing
 
