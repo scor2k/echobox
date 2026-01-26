@@ -148,23 +148,97 @@ tidy: ## Tidy go.mod
 docker-build: ## Build Docker image
 	@echo "$(COLOR_BLUE)Building Docker image...$(COLOR_RESET)"
 	@docker build -t echobox:latest .
+	@docker images echobox:latest
 	@echo "$(COLOR_GREEN)✓ Docker image built: echobox:latest$(COLOR_RESET)"
 
+.PHONY: docker-build-prod
+docker-build-prod: ## Build production Docker image with optimizations
+	@echo "$(COLOR_BLUE)Building production Docker image...$(COLOR_RESET)"
+	@docker build \
+		--build-arg VERSION=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev") \
+		-t echobox:prod \
+		-t echobox:$(shell git rev-parse --short HEAD 2>/dev/null || echo "latest") \
+		.
+	@docker images echobox
+	@echo "$(COLOR_GREEN)✓ Production image built$(COLOR_RESET)"
+
 .PHONY: docker-run
-docker-run: ## Run Docker container
+docker-run: docker-build ## Build and run Docker container
 	@echo "$(COLOR_BLUE)Starting Docker container...$(COLOR_RESET)"
+	@mkdir -p sessions tasks
 	@docker run -it --rm \
 		-p 8080:8080 \
 		-v $(PWD)/sessions:/output \
+		-v $(PWD)/tasks:/tasks:ro \
 		-e CANDIDATE_NAME="docker_test" \
-		--name echobox-test \
+		-e LOG_LEVEL=debug \
+		--memory="512m" \
+		--cpus="0.5" \
+		--security-opt=no-new-privileges:true \
+		--name echobox-dev \
 		echobox:latest
 
+.PHONY: docker-run-prod
+docker-run-prod: ## Run production container with strict security
+	@echo "$(COLOR_BLUE)Starting production container...$(COLOR_RESET)"
+	@mkdir -p sessions tasks
+	@docker run -d \
+		-p 8080:8080 \
+		-v $(PWD)/sessions:/output \
+		-v $(PWD)/tasks:/tasks:ro \
+		-e CANDIDATE_NAME="${CANDIDATE_NAME}" \
+		-e SESSION_TIMEOUT=7200 \
+		--memory="512m" \
+		--memory-reservation="256m" \
+		--cpus="0.5" \
+		--security-opt=no-new-privileges:true \
+		--cap-drop=ALL \
+		--cap-add=CHOWN \
+		--cap-add=SETUID \
+		--cap-add=SETGID \
+		--restart=no \
+		--name echobox-${CANDIDATE_NAME} \
+		echobox:latest
+	@echo "$(COLOR_GREEN)✓ Production container started$(COLOR_RESET)"
+	@echo "$(COLOR_YELLOW)Container ID: $(shell docker ps -q -f name=echobox-${CANDIDATE_NAME})$(COLOR_RESET)"
+
+.PHONY: docker-compose-up
+docker-compose-up: ## Start with docker-compose (development)
+	@echo "$(COLOR_BLUE)Starting with docker-compose...$(COLOR_RESET)"
+	@mkdir -p sessions tasks
+	@docker-compose up echobox-dev
+
+.PHONY: docker-compose-prod
+docker-compose-prod: ## Start with docker-compose (production)
+	@echo "$(COLOR_BLUE)Starting production container with docker-compose...$(COLOR_RESET)"
+	@mkdir -p sessions tasks
+	@docker-compose up -d echobox-prod
+	@echo "$(COLOR_GREEN)✓ Production container started$(COLOR_RESET)"
+
 .PHONY: docker-stop
-docker-stop: ## Stop Docker container
-	@echo "$(COLOR_BLUE)Stopping Docker container...$(COLOR_RESET)"
-	@docker stop echobox-test || true
-	@echo "$(COLOR_GREEN)✓ Container stopped$(COLOR_RESET)"
+docker-stop: ## Stop all echobox containers
+	@echo "$(COLOR_BLUE)Stopping containers...$(COLOR_RESET)"
+	@docker ps -q -f name=echobox | xargs -r docker stop || true
+	@echo "$(COLOR_GREEN)✓ Containers stopped$(COLOR_RESET)"
+
+.PHONY: docker-logs
+docker-logs: ## Show container logs
+	@docker logs -f echobox-dev 2>/dev/null || docker logs -f echobox-prod 2>/dev/null || echo "$(COLOR_YELLOW)No running containers$(COLOR_RESET)"
+
+.PHONY: docker-exec
+docker-exec: ## Execute shell in running container
+	@docker exec -it echobox-dev /bin/bash 2>/dev/null || docker exec -it echobox-prod /bin/bash 2>/dev/null || echo "$(COLOR_YELLOW)No running containers$(COLOR_RESET)"
+
+.PHONY: docker-clean
+docker-clean: ## Remove echobox images and containers
+	@echo "$(COLOR_BLUE)Cleaning Docker resources...$(COLOR_RESET)"
+	@docker ps -a -q -f name=echobox | xargs -r docker rm -f || true
+	@docker images echobox -q | xargs -r docker rmi -f || true
+	@echo "$(COLOR_GREEN)✓ Docker resources cleaned$(COLOR_RESET)"
+
+.PHONY: docker-inspect
+docker-inspect: ## Inspect running container
+	@docker inspect echobox-dev 2>/dev/null || docker inspect echobox-prod 2>/dev/null || echo "$(COLOR_YELLOW)No running containers$(COLOR_RESET)"
 
 ##@ Cleanup
 

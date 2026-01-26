@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Development/testing configuration
+  echobox-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: echobox-dev
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mount sessions directory for recordings
+      - ./sessions:/output
+      # Mount tasks directory (read-only)
+      - ./tasks:/tasks:ro
+    environment:
+      CANDIDATE_NAME: dev_candidate
+      SESSION_TIMEOUT: 3600
+      LOG_LEVEL: debug
+      OUTPUT_DIR: /output
+      RECONNECT_WINDOW: 300
+    # Resource limits
+    mem_limit: 512m
+    cpus: 0.5
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+    # Don't restart on exit (single-use container)
+    restart: "no"
+    # Optional: Network isolation (uncomment to isolate)
+    # network_mode: none
+
+  # Production configuration
+  echobox-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./sessions:/output
+      - ./tasks:/tasks:ro
+    environment:
+      CANDIDATE_NAME: ${CANDIDATE_NAME:-candidate}
+      SESSION_TIMEOUT: ${SESSION_TIMEOUT:-7200}
+      LOG_LEVEL: info
+      OUTPUT_DIR: /output
+    # Stricter resource limits for production
+    mem_limit: 512m
+    mem_reservation: 256m
+    cpus: 0.5
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    # Single-use container
+    restart: "no"
+    # Read-only root filesystem (with writable volumes)
+    # Commented out because candidates need write access for tasks
+    # read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+    # Optional: Network isolation
+    # network_mode: none
+
+# Named volumes for persistence
+volumes:
+  sessions:
+    driver: local
+  tasks:
+    driver: local
