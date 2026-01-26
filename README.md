@@ -27,6 +27,8 @@ make docker-run
 
 **That's it!** You now have a fully functional interview terminal with recording, anti-cheat, and reconnection support.
 
+**Want more details?** See [QUICKSTART.md](QUICKSTART.md) for fast mode guide, shortcuts, and development workflows.
+
 ## Features
 
 ### Completed
@@ -419,8 +421,9 @@ See [tasks/README.md](tasks/README.md) for candidate instructions.
 ## Documentation
 
 - **[README.md](README.md)** - This file (overview and quick start)
-- **[DOCKER.md](DOCKER.md)** - Complete Docker deployment guide
-- **[SECURITY.md](SECURITY.md)** - Security model and best practices
+- **[QUICKSTART.md](QUICKSTART.md)** - Fast mode guide (2-minute setup, shortcuts, workflows)
+- **[DOCKER.md](DOCKER.md)** - Complete Docker deployment guide (511 lines)
+- **[SECURITY.md](SECURITY.md)** - Security model and best practices (401 lines)
 - **[RECORDING.md](RECORDING.md)** - Session recording details
 - **[TIMEOUTS.md](TIMEOUTS.md)** - Timeout configuration reference
 
