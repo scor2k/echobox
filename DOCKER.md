@@ -444,10 +444,10 @@ done
 
 Echobox uses **two separate users** for security:
 
-1. **Application User**: `echobox` (UID 999)
+1. **Application User**: `echobox` (UID 1001)
    - Runs the Go application
    - Writes audit logs to `/output`
-   - No shell access (`/sbin/nologin`)
+   - No shell access (`/bin/false`)
    - Owns all log files
 
 2. **Interactive User**: `candidate` (UID 1000)
@@ -515,7 +515,7 @@ chown candidate /output/session_*/
 # Check who owns what
 docker exec -it container-name ls -la /
 
-# Application and logs owned by echobox (UID 999)
+# Application and logs owned by echobox (UID 1001)
 /app/echobox              -> echobox:echobox
 /output/session_*/        -> echobox:echobox
 

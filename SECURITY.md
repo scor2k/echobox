@@ -117,7 +117,7 @@ Prevents fork bombs and process exhaustion.
 - ⚠️ No encryption at rest (add if storing sensitive data)
 
 **Audit Log Protection (Dual-User Architecture):**
-- ✅ Application runs as `echobox` user (UID 999)
+- ✅ Application runs as `echobox` user (UID 1001)
 - ✅ Interactive shell runs as `candidate` user (UID 1000)
 - ✅ Logs owned by echobox:echobox (candidate cannot modify)
 - ✅ Candidate can read logs but not write/delete
@@ -126,13 +126,13 @@ Prevents fork bombs and process exhaustion.
 
 **How it works:**
 ```bash
-# Application process runs as echobox (UID 999)
+# Application process runs as echobox (UID 1001)
 ps aux | grep echobox
-# 999  /app/echobox
+# 1001  /app/echobox
 
 # Logs created with echobox ownership
 ls -l /output/session_*/
-# -rw-r--r-- 999:999 keystrokes.log
+# -rw-r--r-- 1001:1001 keystrokes.log
 
 # Candidate shell runs as UID 1000
 docker exec -it --user candidate <container> bash
