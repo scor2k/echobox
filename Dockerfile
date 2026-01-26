@@ -44,13 +44,28 @@ RUN apk add --no-cache \
     util-linux \
     && rm -rf /var/cache/apk/*
 
-# Create non-root user
+# Create users for security separation
+# echobox (UID 999): Runs the application, writes audit logs (no shell access)
+RUN addgroup -g 999 echobox && \
+    adduser -D -u 999 -G echobox -s /sbin/nologin echobox
+
+# candidate (UID 1000): Interactive shell for tasks (cannot modify logs)
 RUN addgroup -g 1000 candidate && \
     adduser -D -u 1000 -G candidate candidate
 
-# Create necessary directories
-RUN mkdir -p /output /tasks /home/candidate/solutions && \
-    chown -R candidate:candidate /output /home/candidate
+# Create necessary directories with proper ownership
+# /output - owned by echobox (audit logs protected from candidate tampering)
+RUN mkdir -p /output && \
+    chown echobox:echobox /output && \
+    chmod 755 /output
+
+# /tasks - owned by root, read-only for all
+RUN mkdir -p /tasks && \
+    chmod 755 /tasks
+
+# /home/candidate - owned by candidate (for task solutions)
+RUN mkdir -p /home/candidate/solutions && \
+    chown -R candidate:candidate /home/candidate
 
 # Set working directory
 WORKDIR /app
@@ -67,11 +82,13 @@ RUN ls -la /app/web/ && \
     echo "Web assets copied successfully"
 
 # Set permissions
+# /app owned by echobox (application user)
 RUN chmod +x /app/echobox && \
-    chown -R candidate:candidate /app
+    chown -R echobox:echobox /app
 
-# Switch to non-root user
-USER candidate
+# Switch to application user (not candidate!)
+# This ensures logs are owned by echobox, not candidate
+USER echobox
 
 # Expose port
 EXPOSE 8080

@@ -116,6 +116,35 @@ Prevents fork bombs and process exhaustion.
 - ⚠️ Recordings stored on host filesystem (ensure proper permissions)
 - ⚠️ No encryption at rest (add if storing sensitive data)
 
+**Audit Log Protection (Dual-User Architecture):**
+- ✅ Application runs as `echobox` user (UID 999)
+- ✅ Interactive shell runs as `candidate` user (UID 1000)
+- ✅ Logs owned by echobox:echobox (candidate cannot modify)
+- ✅ Candidate can read logs but not write/delete
+- ✅ Prevents log tampering by candidates
+- ✅ OS-level permission enforcement
+
+**How it works:**
+```bash
+# Application process runs as echobox (UID 999)
+ps aux | grep echobox
+# 999  /app/echobox
+
+# Logs created with echobox ownership
+ls -l /output/session_*/
+# -rw-r--r-- 999:999 keystrokes.log
+
+# Candidate shell runs as UID 1000
+docker exec -it --user candidate <container> bash
+whoami  # candidate
+
+# Candidate cannot tamper with logs
+echo "tamper" >> /output/session/keystrokes.log
+# Permission denied ✅
+```
+
+This ensures audit logs are tamper-proof even if candidate gains shell access.
+
 ### 5. Network Security
 
 **Options:**
@@ -144,9 +173,10 @@ docker run echobox:latest
 ### 6. Access Control
 
 **Container Access:**
-- ✅ Non-root user (UID 1000)
+- ✅ Dual-user architecture (app: echobox UID 999, shell: candidate UID 1000)
 - ✅ No sudo/privilege escalation
 - ✅ Limited capabilities
+- ✅ Shell access requires --user candidate flag
 
 **Web Interface:**
 - ⚠️ No authentication (add basic auth if needed)

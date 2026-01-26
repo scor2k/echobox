@@ -234,8 +234,12 @@ docker-logs: ## Show container logs
 	@docker logs -f echobox-dev 2>/dev/null || docker logs -f echobox-prod 2>/dev/null || echo "$(COLOR_YELLOW)No running containers$(COLOR_RESET)"
 
 .PHONY: docker-exec
-docker-exec: ## Execute shell in running container
-	@docker exec -it echobox-dev /bin/bash 2>/dev/null || docker exec -it echobox-prod /bin/bash 2>/dev/null || echo "$(COLOR_YELLOW)No running containers$(COLOR_RESET)"
+docker-exec: ## Execute shell in running container (as candidate user)
+	@echo "$(COLOR_BLUE)Opening shell as candidate user (UID 1000)...$(COLOR_RESET)"
+	@docker exec -it --user candidate echobox-dev /bin/bash 2>/dev/null || \
+	 docker exec -it --user candidate echobox-prod /bin/bash 2>/dev/null || \
+	 docker exec -it --user candidate $$(docker ps -q -f name=echobox-prod | head -1) /bin/bash 2>/dev/null || \
+	 echo "$(COLOR_YELLOW)No running containers$(COLOR_RESET)"
 
 .PHONY: docker-clean
 docker-clean: ## Remove echobox images and containers

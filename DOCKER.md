@@ -438,10 +438,96 @@ for i in {1..5}; do
 done
 ```
 
+## Dual-User Architecture (Audit Log Protection)
+
+### Security Model
+
+Echobox uses **two separate users** for security:
+
+1. **Application User**: `echobox` (UID 999)
+   - Runs the Go application
+   - Writes audit logs to `/output`
+   - No shell access (`/sbin/nologin`)
+   - Owns all log files
+
+2. **Interactive User**: `candidate` (UID 1000)
+   - Used for shell access during interviews
+   - Works in `/home/candidate` for tasks
+   - Can READ logs but cannot MODIFY them
+   - Cannot tamper with audit trail
+
+### Why This Matters
+
+**Without separation:**
+```bash
+# Bad: Candidate can tamper with logs
+docker exec -it container bash
+rm /output/session/keystrokes.log  # ✅ Works - BAD!
+```
+
+**With dual-user architecture:**
+```bash
+# Good: Logs are protected
+docker exec -it --user candidate container bash
+rm /output/session/keystrokes.log  # ❌ Permission denied - GOOD!
+```
+
+### Shell Access for Debugging
+
+**Correct way to exec into container:**
+```bash
+# As candidate user (for tasks/debugging)
+docker exec -it --user candidate echobox-prod-123 /bin/bash
+
+# Or use Makefile (does this automatically)
+make docker-exec
+```
+
+**What candidate CAN do:**
+```bash
+# Work on tasks
+cd ~/solutions
+vi task1.sh
+
+# View logs (read-only)
+cat /output/session_*/keystrokes.log
+
+# Do interview tasks
+cd /tasks
+./check_system.sh
+```
+
+**What candidate CANNOT do:**
+```bash
+# Modify logs (permission denied)
+echo "fake" >> /output/session_*/keystrokes.log
+
+# Delete logs (permission denied)
+rm /output/session_*/terminal.log
+
+# Change ownership (permission denied)
+chown candidate /output/session_*/
+```
+
+### File Ownership in Container
+
+```bash
+# Check who owns what
+docker exec -it container-name ls -la /
+
+# Application and logs owned by echobox (UID 999)
+/app/echobox              -> echobox:echobox
+/output/session_*/        -> echobox:echobox
+
+# Home directory owned by candidate (UID 1000)
+/home/candidate/          -> candidate:candidate
+```
+
 ## Security Considerations
 
 ### What's Protected
-✅ Non-root execution (UID 1000)
+✅ **Tamper-proof audit logs** (echobox UID 999, candidate cannot modify)
+✅ Non-root execution (app: UID 999, shell: UID 1000)
 ✅ Resource limits prevent DoS
 ✅ Capability dropping limits syscalls
 ✅ Single-use containers (no state persistence)
@@ -450,13 +536,15 @@ done
 ### What's NOT Protected
 ⚠️ Writable filesystem (by design - needed for tasks)
 ⚠️ Network access (optional - may be needed)
+⚠️ Candidate can READ logs (acceptable for debugging tasks)
 ⚠️ No AppArmor/SELinux profile (optional enhancement)
 
 ### Threat Model
 - Candidates cannot escalate to root
+- **Candidates cannot tamper with audit logs** (dual-user protection)
 - Resource exhaustion prevented by limits
 - Network isolation optional (task-dependent)
-- Session recordings tamper-evident (SHA-256)
+- Session recordings tamper-evident (SHA-256 + OS permissions)
 - Anti-cheat detects paste/automation
 
 ## Production Checklist
