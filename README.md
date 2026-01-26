@@ -4,22 +4,32 @@ A secure, web-based terminal environment for conducting technical SRE interviews
 
 ## Features
 
-### Current (Phase 1 - Completed)
+### Completed
+
+**Phase 1: Core Terminal**
 - ✅ Web-based terminal using xterm.js
 - ✅ WebSocket-based PTY bridge
 - ✅ Real-time terminal interaction
 - ✅ Clean, professional UI
-- ✅ Session timer display
 - ✅ Connection status indicators
 - ✅ Client-side anti-cheat (paste prevention, focus tracking)
 - ✅ Health check endpoint
-- ✅ Graceful shutdown handling
+- ✅ Graceful shutdown handling (Ctrl+C responds in ~6s)
+
+**Phase 2: Recording System**
+- ✅ Session manager with UUID-based directories
+- ✅ Multi-file recording (keystrokes, terminal, timing, websocket, events)
+- ✅ scriptreplay-compatible format
+- ✅ SHA-256 integrity hashing
+- ✅ Metadata collection and JSON export
+- ✅ Buffered I/O with periodic flushing (10s)
+- ✅ Session replay script with speed control
+- ✅ Comprehensive analysis script
 
 ### In Progress
-- 🚧 Session recording (keystrokes, terminal output, timing)
 - 🚧 Server-side anti-cheat detection
 - 🚧 Reconnection support
-- 🚧 Comprehensive metrics
+- 🚧 Comprehensive metrics (Prometheus)
 - 🚧 Docker containerization
 - 🚧 Security hardening
 
@@ -192,15 +202,14 @@ echobox/
 ├── internal/
 │   ├── config/
 │   │   └── config.go            # Configuration management
+│   ├── session/
+│   │   └── manager.go           # Session lifecycle and metadata
 │   ├── terminal/
 │   │   ├── pty.go               # PTY allocation and management
-│   │   └── recorder.go          # [TODO] Session recording
+│   │   └── recorder.go          # Multi-file session recording
 │   ├── web/
 │   │   ├── server.go            # HTTP server
-│   │   └── websocket.go         # WebSocket handler
-│   ├── session/
-│   │   ├── manager.go           # [TODO] Session lifecycle
-│   │   └── state.go             # [TODO] Session state
+│   │   └── websocket.go         # WebSocket handler with recording
 │   ├── anticheat/
 │   │   ├── detector.go          # [TODO] Server-side detection
 │   │   └── analyzer.go          # [TODO] Pattern analysis
@@ -212,8 +221,13 @@ echobox/
 │   ├── style.css                # Styling
 │   └── vendor/                  # Third-party libraries (xterm.js)
 ├── tasks/                       # [TODO] Interview tasks
-├── scripts/                     # [TODO] Helper scripts
+├── scripts/
+│   ├── replay.sh                # Replay recorded sessions
+│   └── analyze.sh               # Analyze session data
+├── sessions/                    # Recorded sessions (created at runtime)
 ├── Makefile                     # Build automation
+├── TIMEOUTS.md                  # Timeout configuration docs
+├── RECORDING.md                 # Recording system docs
 ├── go.mod
 ├── go.sum
 └── README.md
@@ -275,11 +289,13 @@ curl http://localhost:8080/health
 - ✅ Tab visibility monitoring
 - ✅ All events logged and sent to server
 
-### Server-Side (Planned)
+### Server-Side (Implemented & Planned)
+- ✅ Anti-cheat event logging (paste attempts, focus loss)
+- ✅ WebSocket message logging
+- ✅ Session integrity (SHA-256 hashing)
 - 🚧 Input rate limiting (enforce max chars/sec)
 - 🚧 Typing pattern analysis (WPM, anomaly detection)
 - 🚧 Command similarity detection
-- 🚧 Session integrity validation
 
 ## Security Features
 
@@ -297,16 +313,44 @@ curl http://localhost:8080/health
 - Capability dropping
 - AppArmor/SELinux profiles
 
+## Session Recording
+
+All sessions are automatically recorded to `sessions/` directory (or `OUTPUT_DIR` if configured).
+
+### Recorded Files
+
+Each session creates:
+- `keystrokes.log` - Raw input with millisecond timestamps
+- `terminal.log` - Complete terminal output (scriptreplay format)
+- `timing.log` - Timing data for scriptreplay
+- `websocket.log` - All WebSocket messages
+- `events.log` - Anti-cheat events (paste, focus loss, etc.)
+- `commands.log` - Extracted commands (basic)
+- `metadata.json` - Session info + SHA-256 file hashes
+
+### Replay Session
+```bash
+./scripts/replay.sh sessions/candidate_2026-01-26_14-30-00_a3f7b9c1/
+```
+
+Supports real-time, 2x, and 5x playback speeds.
+
+### Analyze Session
+```bash
+./scripts/analyze.sh sessions/candidate_2026-01-26_14-30-00_a3f7b9c1/
+```
+
+Shows:
+- Session statistics
+- File integrity verification
+- Anti-cheat event summary
+- Typing speed (WPM estimate)
+
+See [RECORDING.md](RECORDING.md) for complete documentation.
+
 ## Roadmap
 
-### Phase 2: Recording System (Next)
-- [ ] Multi-file session recording
-- [ ] scriptreplay-compatible format
-- [ ] SHA-256 integrity hashing
-- [ ] Metadata collection
-- [ ] Command history extraction
-
-### Phase 3: Anti-Cheat Enhancement
+### Phase 3: Anti-Cheat Enhancement (Next)
 - [ ] Server-side paste detection
 - [ ] Typing speed analysis
 - [ ] Pattern anomaly detection
