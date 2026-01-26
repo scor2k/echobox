@@ -9,6 +9,9 @@ BUILD_DIR=./build
 CMD_DIR=./cmd/server
 PKG_LIST=$(shell go list ./... | grep -v /vendor/)
 
+# Docker variables (can be overridden)
+DOCKER_PORT?=8080
+
 # Default target
 .DEFAULT_GOAL := help
 
@@ -167,7 +170,7 @@ docker-run: docker-build ## Build and run Docker container
 	@echo "$(COLOR_BLUE)Starting Docker container...$(COLOR_RESET)"
 	@mkdir -p sessions tasks
 	@docker run -it --rm \
-		-p 8080:8080 \
+		-p $(DOCKER_PORT):8080 \
 		-v $(PWD)/sessions:/output \
 		-v $(PWD)/tasks:/tasks:ro \
 		-e CANDIDATE_NAME="docker_test" \
@@ -177,13 +180,14 @@ docker-run: docker-build ## Build and run Docker container
 		--security-opt=no-new-privileges:true \
 		--name echobox-dev \
 		echobox:latest
+	@echo "$(COLOR_YELLOW)URL: http://localhost:$(DOCKER_PORT)$(COLOR_RESET)"
 
 .PHONY: docker-run-prod
 docker-run-prod: docker-build-prod ## Build and run production container with strict security
 	@echo "$(COLOR_BLUE)Starting production container...$(COLOR_RESET)"
 	@mkdir -p sessions tasks
 	@docker run -d \
-		-p 8080:8080 \
+		-p $(DOCKER_PORT):8080 \
 		-v $(PWD)/sessions:/output \
 		-v $(PWD)/tasks:/tasks:ro \
 		-e CANDIDATE_NAME="${CANDIDATE_NAME:-prod_candidate}" \
@@ -201,7 +205,7 @@ docker-run-prod: docker-build-prod ## Build and run production container with st
 		echobox:prod
 	@echo "$(COLOR_GREEN)✓ Production container started$(COLOR_RESET)"
 	@echo "$(COLOR_YELLOW)Container: $(shell docker ps --format '{{.Names}}' -f name=echobox-prod | head -1)$(COLOR_RESET)"
-	@echo "$(COLOR_YELLOW)URL: http://localhost:8080$(COLOR_RESET)"
+	@echo "$(COLOR_YELLOW)URL: http://localhost:$(DOCKER_PORT)$(COLOR_RESET)"
 
 .PHONY: docker-compose-up
 docker-compose-up: ## Start with docker-compose (development)
