@@ -26,12 +26,28 @@ A secure, web-based terminal environment for conducting technical SRE interviews
 - ✅ Session replay script with speed control
 - ✅ Comprehensive analysis script
 
+**Phase 3: Anti-Cheat Detection**
+- ✅ Server-side rate limiting (30 chars/sec threshold)
+- ✅ Burst detection for paste attempts
+- ✅ Real-time typing pattern analysis
+- ✅ Anti-cheat event logging (info/warning/critical severity)
+- ✅ Post-session analysis with verdict generation
+- ✅ WPM calculation and anomaly detection
+- ✅ Automated recommendations based on patterns
+
+**Phase 4: Reconnection & Resilience**
+- ✅ Session state management with connection tracking
+- ✅ Reconnection token system (5-minute window)
+- ✅ Terminal buffer persistence (100KB rolling buffer)
+- ✅ GET /reconnect endpoint for session resumption
+- ✅ Client-side auto-reconnect with exponential backoff
+- ✅ Terminal state restoration on reconnect
+- ✅ Connection statistics tracking
+
 ### In Progress
-- 🚧 Server-side anti-cheat detection
-- 🚧 Reconnection support
 - 🚧 Comprehensive metrics (Prometheus)
 - 🚧 Docker containerization
-- 🚧 Security hardening
+- 🚧 Security hardening (Phase 5)
 
 ## Quick Start
 
