@@ -2,6 +2,31 @@
 
 A secure, web-based terminal environment for conducting technical SRE interviews with comprehensive session recording and anti-cheat measures.
 
+## 🚀 Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/scor2k/echobox.git
+cd echobox
+
+# Build and run (local)
+make run
+
+# Or with Docker
+make docker-build
+make docker-run
+
+# Open browser to http://localhost:8080
+# Type commands in the terminal - it works!
+# Click "Finish Session" or type 'exit' when done
+
+# Review the session
+./scripts/analyze.sh sessions/anonymous_*
+./scripts/replay.sh sessions/anonymous_*
+```
+
+**That's it!** You now have a fully functional interview terminal with recording, anti-cheat, and reconnection support.
+
 ## Features
 
 ### Completed
@@ -381,37 +406,93 @@ Shows:
 
 See [RECORDING.md](RECORDING.md) for complete documentation.
 
-## Roadmap
+## Interview Tasks
 
-### Phase 3: Anti-Cheat Enhancement (Next)
-- [ ] Server-side paste detection
-- [ ] Typing speed analysis
-- [ ] Pattern anomaly detection
-- [ ] Comprehensive event logging
+Three sample SRE tasks included in `tasks/` directory:
 
-### Phase 4: Reconnection & Resilience
-- [ ] Session state persistence
-- [ ] WebSocket reconnection
-- [ ] Terminal buffer restoration
-- [ ] Connection health monitoring
+1. **Debugging** (`tasks/01-debugging/`): Fix a broken web application
+2. **Incident Response** (`tasks/02-incident-response/`): Investigate high CPU usage
+3. **Automation** (`tasks/03-automation/`): Write log analysis script
 
-### Phase 5: Security Hardening
-- [ ] Docker multi-stage build
-- [ ] Network isolation
-- [ ] Resource limits
-- [ ] Security testing
+See [tasks/README.md](tasks/README.md) for candidate instructions.
 
-### Phase 6: Session Management & UX
-- [ ] Session timeout with warnings
-- [ ] Finish button with confirmation
-- [ ] Instructions panel
-- [ ] Metrics endpoint (Prometheus format)
+## Documentation
 
-### Phase 7: Tasks & Documentation
-- [ ] Sample SRE tasks
-- [ ] Replay scripts
-- [ ] Analysis scripts
-- [ ] Complete documentation
+- **[README.md](README.md)** - This file (overview and quick start)
+- **[DOCKER.md](DOCKER.md)** - Complete Docker deployment guide
+- **[SECURITY.md](SECURITY.md)** - Security model and best practices
+- **[RECORDING.md](RECORDING.md)** - Session recording details
+- **[TIMEOUTS.md](TIMEOUTS.md)** - Timeout configuration reference
+
+## Testing
+
+Run the comprehensive test suite:
+```bash
+./test_all.sh
+```
+
+Tests:
+- Build process
+- Server startup
+- Recording system
+- Session management
+- Analysis scripts
+- Docker configuration
+- Interview tasks
+
+## Production Deployment
+
+### Option 1: Docker (Recommended)
+```bash
+# Build image
+make docker-build
+
+# Run production container
+docker run -d \
+  --name interview-jane-doe \
+  -p 8080:8080 \
+  -v $(pwd)/sessions:/output \
+  -v $(pwd)/tasks:/tasks:ro \
+  -e CANDIDATE_NAME="jane_doe" \
+  -e SESSION_TIMEOUT=7200 \
+  --memory="512m" \
+  --cpus="0.5" \
+  --security-opt=no-new-privileges:true \
+  --restart=no \
+  echobox:latest
+
+# Send URL to candidate
+echo "Interview: http://your-server:8080"
+```
+
+See [DOCKER.md](DOCKER.md) for complete deployment guide.
+
+### Option 2: Direct Binary
+```bash
+# Build
+make build
+
+# Run with custom config
+OUTPUT_DIR=./sessions \
+CANDIDATE_NAME="john_doe" \
+SESSION_TIMEOUT=3600 \
+./echobox
+```
+
+## Project Status
+
+**Current Version**: 1.0 (Production Ready)
+
+All core phases completed:
+- ✅ Phase 1: Core Terminal
+- ✅ Phase 2: Recording System
+- ✅ Phase 3: Anti-Cheat Detection
+- ✅ Phase 4: Reconnection & Resilience
+- ✅ Phase 5: Docker & Security
+- ✅ Phase 7: Tasks & Documentation
+
+**Not Implemented:**
+- ⏭️ Phase 6: Prometheus Metrics (optional)
 
 ## License
 

@@ -37,5 +37,6 @@ Thumbs.db
 # Logs
 *.log
 
-# Test scripts
-test_*.sh
+# Test scripts (keep test_all.sh)
+test_shell_exit.sh
+test_results.txt

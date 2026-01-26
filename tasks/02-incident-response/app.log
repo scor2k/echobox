@@ -1,0 +1,18 @@
+[2026-01-26 10:00:01] INFO: Application started successfully
+[2026-01-26 10:00:02] INFO: Database connection established
+[2026-01-26 10:00:05] INFO: HTTP server listening on port 8000
+[2026-01-26 10:05:12] INFO: Serving request: GET /api/users
+[2026-01-26 10:05:13] INFO: Serving request: GET /api/products
+[2026-01-26 10:10:00] WARNING: Background job started: data_sync_service
+[2026-01-26 10:10:01] INFO: Starting infinite retry loop for failed sync...
+[2026-01-26 10:10:02] ERROR: Sync failed, retrying immediately...
+[2026-01-26 10:10:02] ERROR: Sync failed, retrying immediately...
+[2026-01-26 10:10:02] ERROR: Sync failed, retrying immediately...
+[2026-01-26 10:10:03] WARNING: CPU usage spiking - retry loop may be too aggressive
+[2026-01-26 10:10:05] INFO: Serving request: GET /health (slow response)
+[2026-01-26 10:10:10] ERROR: Request timeout - server overloaded
+[2026-01-26 10:10:15] CRITICAL: System performance degraded
+[2026-01-26 10:10:20] INFO: Multiple users reporting slow performance
+[2026-01-26 10:10:25] WARNING: Response times increased 10x
+[2026-01-26 10:10:30] ERROR: Unable to process new requests
+[2026-01-26 10:10:35] CRITICAL: Incident detected - high CPU usage
