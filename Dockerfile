@@ -45,9 +45,9 @@ RUN apk add --no-cache \
     && rm -rf /var/cache/apk/*
 
 # Create users for security separation
-# echobox (UID 999): Runs the application, writes audit logs (no shell access)
-RUN addgroup -g 999 echobox && \
-    adduser -D -u 999 -G echobox -s /sbin/nologin echobox
+# echobox (UID 1001): Runs the application, writes audit logs (no shell access)
+RUN addgroup -g 1001 echobox && \
+    adduser -D -u 1001 -G echobox -s /bin/false echobox
 
 # candidate (UID 1000): Interactive shell for tasks (cannot modify logs)
 RUN addgroup -g 1000 candidate && \
