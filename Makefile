@@ -211,14 +211,17 @@ docker-run-prod: docker-build-prod ## Build and run production container with st
 docker-compose-up: ## Start with docker-compose (development)
 	@echo "$(COLOR_BLUE)Starting with docker-compose...$(COLOR_RESET)"
 	@mkdir -p sessions tasks
+	@chmod 777 sessions 2>/dev/null || true
 	@docker-compose up echobox-dev
 
 .PHONY: docker-compose-prod
 docker-compose-prod: ## Start with docker-compose (production)
 	@echo "$(COLOR_BLUE)Starting production container with docker-compose...$(COLOR_RESET)"
 	@mkdir -p sessions tasks
+	@chmod 777 sessions 2>/dev/null || true
 	@docker-compose up -d echobox-prod
 	@echo "$(COLOR_GREEN)✓ Production container started$(COLOR_RESET)"
+	@echo "$(COLOR_YELLOW)URL: http://localhost:${DOCKER_PORT:-8080}$(COLOR_RESET)"
 
 .PHONY: docker-stop
 docker-stop: ## Stop all echobox containers
