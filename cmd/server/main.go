@@ -33,12 +33,15 @@ func main() {
 	log.Println(cfg.MOTD)
 
 	// Create session manager
-	sessionMgr, err := session.NewManager(cfg.OutputDir, cfg.CandidateName)
+	sessionMgr, err := session.NewManager(cfg.OutputDir, cfg.CandidateName, cfg.ReconnectWindow)
 	if err != nil {
 		log.Fatalf("Failed to create session manager: %v", err)
 	}
 
-	log.Printf("Session created: %s in %s", sessionMgr.GetSession().ID, sessionMgr.GetSessionDir())
+	log.Printf("Session created: %s (token: %s) in %s",
+		sessionMgr.GetSession().ID,
+		sessionMgr.GetState().GetReconnectToken(),
+		sessionMgr.GetSessionDir())
 
 	// Create recorder
 	recorder, err := terminal.NewRecorder(sessionMgr.GetSessionDir(), cfg.FlushInterval)
@@ -62,8 +65,12 @@ func main() {
 
 	log.Printf("PTY created, shell: %s", cfg.Shell)
 
-	// Create WebSocket handler with recorder and detector
-	wsHandler := web.NewWSHandler(pty, recorder, detector)
+	// Create WebSocket handler with recorder, detector, and session state
+	wsHandler := web.NewWSHandler(pty, recorder, detector, sessionMgr.GetState())
+
+	log.Printf("Reconnection enabled - token: %s (valid for %v)",
+		sessionMgr.GetState().GetReconnectToken(),
+		cfg.ReconnectWindow)
 
 	// Create HTTP server
 	server := web.New(cfg, wsHandler)

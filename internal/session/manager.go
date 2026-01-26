@@ -28,13 +28,14 @@ type Session struct {
 
 // Manager manages session lifecycle and recording
 type Manager struct {
-	session   *Session
-	baseDir   string
+	session    *Session
+	state      *SessionState
+	baseDir    string
 	sessionDir string
 }
 
 // NewManager creates a new session manager
-func NewManager(baseDir, candidateName string) (*Manager, error) {
+func NewManager(baseDir, candidateName string, reconnectWindow time.Duration) (*Manager, error) {
 	// Create base output directory if it doesn't exist
 	if err := os.MkdirAll(baseDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create base directory: %w", err)
@@ -60,11 +61,19 @@ func NewManager(baseDir, candidateName string) (*Manager, error) {
 		Metadata:      make(map[string]interface{}),
 	}
 
+	// Create session state for reconnection support
+	state := NewSessionState(reconnectWindow)
+
 	m := &Manager{
 		session:    session,
+		state:      state,
 		baseDir:    baseDir,
 		sessionDir: sessionDir,
 	}
+
+	// Store reconnect token in metadata
+	m.SetMetadata("reconnect_token", state.GetReconnectToken())
+	m.SetMetadata("reconnect_window_seconds", reconnectWindow.Seconds())
 
 	// Write initial metadata
 	if err := m.SaveMetadata(); err != nil {
@@ -72,6 +81,11 @@ func NewManager(baseDir, candidateName string) (*Manager, error) {
 	}
 
 	return m, nil
+}
+
+// GetState returns the session state
+func (m *Manager) GetState() *SessionState {
+	return m.state
 }
 
 // GetSession returns the current session

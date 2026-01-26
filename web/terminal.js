@@ -156,18 +156,47 @@
             sendResize();
         };
 
-        ws.onclose = () => {
+        ws.onclose = (event) => {
             connected = false;
-            updateStatus('disconnected', 'Disconnected');
+            updateStatus('disconnected', 'Reconnecting...');
             finishBtn.disabled = true;
 
-            // Attempt reconnect after 2 seconds
-            setTimeout(() => {
-                if (!connected) {
-                    console.log('Attempting to reconnect...');
-                    initWebSocket();
-                }
-            }, 2000);
+            console.log('WebSocket closed:', event.code, event.reason);
+
+            // Check if we have a reconnect token
+            if (typeof window.attemptReconnect === 'function') {
+                window.attemptReconnect(
+                    // On success
+                    (data) => {
+                        console.log('Reconnection successful, restoring terminal...');
+                        // Restore terminal buffer if provided
+                        if (data.terminal && data.terminal.buffer) {
+                            term.write(data.terminal.buffer);
+                        }
+                        // Reconnect WebSocket
+                        initWebSocket();
+                    },
+                    // On failure
+                    (reason) => {
+                        console.log('Reconnection failed:', reason);
+                        // Try fresh connection after delay
+                        setTimeout(() => {
+                            if (!connected) {
+                                console.log('Attempting fresh connection...');
+                                initWebSocket();
+                            }
+                        }, 3000);
+                    }
+                );
+            } else {
+                // Fallback: simple reconnect
+                setTimeout(() => {
+                    if (!connected) {
+                        console.log('Attempting to reconnect...');
+                        initWebSocket();
+                    }
+                }, 2000);
+            }
         };
 
         ws.onerror = (error) => {

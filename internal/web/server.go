@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -30,6 +31,9 @@ func New(cfg *config.Config, wsHandler *WSHandler) *Server {
 
 	// WebSocket endpoint
 	mux.HandleFunc("/ws", wsHandler.Handle)
+
+	// Reconnection endpoint
+	mux.HandleFunc("/reconnect", s.handleReconnect)
 
 	// Health check endpoint
 	mux.HandleFunc("/health", s.handleHealth)
@@ -92,6 +96,53 @@ func (s *Server) addMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// handleReconnect handles reconnection requests
+func (s *Server) handleReconnect(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		http.Error(w, "Missing reconnect token", http.StatusBadRequest)
+		return
+	}
+
+	// Check if token is valid and session can reconnect
+	if s.wsHandler.sessionState == nil {
+		http.Error(w, "Session state not available", http.StatusInternalServerError)
+		return
+	}
+
+	if !s.wsHandler.sessionState.CanReconnect(token) {
+		state := s.wsHandler.sessionState.GetState()
+		if state == "expired" {
+			http.Error(w, "Reconnection window expired", http.StatusGone)
+		} else if state == "active" {
+			http.Error(w, "Session is already active", http.StatusConflict)
+		} else {
+			http.Error(w, "Invalid reconnect token", http.StatusUnauthorized)
+		}
+		return
+	}
+
+	// Return success with terminal buffer
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	size := s.wsHandler.sessionState.GetTerminalSize()
+	buffer := s.wsHandler.sessionState.GetTerminalBuffer()
+
+	response := map[string]interface{}{
+		"status": "ok",
+		"message": "Reconnection allowed",
+		"terminal": map[string]interface{}{
+			"cols":   size.Cols,
+			"rows":   size.Rows,
+			"buffer": string(buffer),
+		},
+	}
+
+	json.NewEncoder(w).Encode(response)
+	log.Printf("Reconnection approved for token: %s", token[:8]+"...")
 }
 
 // handleHealth handles health check requests

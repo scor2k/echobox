@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 
 	"github.com/akonyukov/echobox/internal/anticheat"
+	"github.com/akonyukov/echobox/internal/session"
 	"github.com/akonyukov/echobox/internal/terminal"
 )
 
@@ -39,17 +40,19 @@ type WSHandler struct {
 	pty          *terminal.PTY
 	recorder     *terminal.Recorder
 	detector     *anticheat.Detector
+	sessionState *session.SessionState
 	mu           sync.RWMutex
 	shutdown     chan struct{}
 	finishSignal chan struct{}
 }
 
 // NewWSHandler creates a new WebSocket handler
-func NewWSHandler(pty *terminal.PTY, recorder *terminal.Recorder, detector *anticheat.Detector) *WSHandler {
+func NewWSHandler(pty *terminal.PTY, recorder *terminal.Recorder, detector *anticheat.Detector, sessionState *session.SessionState) *WSHandler {
 	return &WSHandler{
 		pty:          pty,
 		recorder:     recorder,
 		detector:     detector,
+		sessionState: sessionState,
 		shutdown:     make(chan struct{}),
 		finishSignal: make(chan struct{}, 1),
 	}
@@ -81,6 +84,12 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("WebSocket connected: %s", r.RemoteAddr)
 
+	// Mark connection in session state
+	if h.sessionState != nil {
+		h.sessionState.Connect()
+		log.Printf("Session state: %s (token: %s)", h.sessionState.GetState(), h.sessionState.GetReconnectToken())
+	}
+
 	// Write mutex to prevent concurrent writes to WebSocket
 	var writeMu sync.Mutex
 
@@ -111,6 +120,11 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 					if err := h.recorder.RecordOutput(buf[:n]); err != nil {
 						log.Printf("Failed to record output: %v", err)
 					}
+				}
+
+				// Update terminal buffer for reconnection
+				if h.sessionState != nil {
+					h.sessionState.UpdateTerminalBuffer(buf[:n])
 				}
 
 				writeMu.Lock()
@@ -235,6 +249,13 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	select {
 	case <-done:
 		log.Printf("WebSocket disconnected: %s", r.RemoteAddr)
+		// Mark disconnection in session state
+		if h.sessionState != nil {
+			h.sessionState.Disconnect()
+			log.Printf("Session state: %s (can reconnect for %v)",
+				h.sessionState.GetState(),
+				h.sessionState.ReconnectWindow)
+		}
 	case <-h.shutdown:
 		log.Printf("Shutdown signal received, closing connection: %s", r.RemoteAddr)
 	}
@@ -248,6 +269,12 @@ func (h *WSHandler) handleMessage(msg *Message) error {
 		if err := json.Unmarshal(msg.Data, &resize); err != nil {
 			return fmt.Errorf("invalid resize data: %w", err)
 		}
+
+		// Update session state
+		if h.sessionState != nil {
+			h.sessionState.UpdateTerminalSize(resize.Cols, resize.Rows)
+		}
+
 		return h.pty.Resize(resize.Cols, resize.Rows)
 
 	case "finish":
