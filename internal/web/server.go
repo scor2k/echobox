@@ -152,7 +152,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `{"status":"ok","candidate":"%s"}`, s.config.CandidateName)
 }
 
-// handleStatic serves static files
+// handleStatic serves static files with correct Content-Type
 func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 	// Get the web directory path (relative to binary location)
 	webDir := "./web"
@@ -171,6 +171,39 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set correct Content-Type based on file extension
+	ext := filepath.Ext(filePath)
+	contentType := getContentType(ext)
+	if contentType != "" {
+		w.Header().Set("Content-Type", contentType)
+	}
+
 	// Serve the file
 	http.ServeFile(w, r, filePath)
+}
+
+// getContentType returns the correct Content-Type for file extensions
+func getContentType(ext string) string {
+	contentTypes := map[string]string{
+		".html": "text/html; charset=utf-8",
+		".css":  "text/css; charset=utf-8",
+		".js":   "application/javascript; charset=utf-8",
+		".json": "application/json; charset=utf-8",
+		".png":  "image/png",
+		".jpg":  "image/jpeg",
+		".jpeg": "image/jpeg",
+		".gif":  "image/gif",
+		".svg":  "image/svg+xml",
+		".ico":  "image/x-icon",
+		".woff": "font/woff",
+		".woff2": "font/woff2",
+		".ttf":  "font/ttf",
+		".eot":  "application/vnd.ms-fontobject",
+	}
+
+	if ct, ok := contentTypes[ext]; ok {
+		return ct
+	}
+
+	return ""
 }
