@@ -43,11 +43,23 @@ A secure, web-based terminal environment for conducting technical SRE interviews
 - ✅ Client-side auto-reconnect with exponential backoff
 - ✅ Terminal state restoration on reconnect
 - ✅ Connection statistics tracking
+- ✅ Shell exit detection (exit command ends session cleanly)
 
-### In Progress
-- 🚧 Comprehensive metrics (Prometheus)
-- 🚧 Docker containerization
-- 🚧 Security hardening (Phase 5)
+**Phase 5: Docker & Security**
+- ✅ Multi-stage Dockerfile (<50MB image)
+- ✅ Docker Compose (dev + prod configurations)
+- ✅ Non-root user execution (candidate:1000)
+- ✅ Resource limits (512MB memory, 0.5 CPU)
+- ✅ Security hardening (cap_drop, no-new-privileges)
+- ✅ Optional network isolation
+- ✅ Health checks and monitoring
+- ✅ Enhanced Makefile with 15+ Docker targets
+- ✅ Complete deployment documentation (DOCKER.md)
+- ✅ Sample interview task (debugging exercise)
+
+### Remaining
+- 🚧 Comprehensive metrics (Prometheus format) - Phase 6
+- 🚧 Additional interview tasks - Phase 7
 
 ## Quick Start
 
