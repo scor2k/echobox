@@ -45,7 +45,7 @@ func Load() (*Config, error) {
 		CandidateName:   getEnv("CANDIDATE_NAME", "anonymous"),
 		SessionTimeout:  time.Duration(getEnvInt("SESSION_TIMEOUT", 7200)) * time.Second,
 		ReconnectWindow: time.Duration(getEnvInt("RECONNECT_WINDOW", 300)) * time.Second,
-		OutputDir:       getEnv("OUTPUT_DIR", "/output"),
+		OutputDir:       getEnv("OUTPUT_DIR", "./sessions"),
 		Shell:           getEnv("SHELL", "/bin/bash"),
 		FlushInterval:   time.Duration(getEnvInt("FLUSH_INTERVAL", 10)) * time.Second,
 		InputRateLimit:  getEnvInt("INPUT_RATE_LIMIT", 30),

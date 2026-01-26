@@ -85,7 +85,7 @@ All configuration is done via environment variables:
 | `PORT` | 8080 | HTTP server port |
 | `SESSION_TIMEOUT` | 7200 | Max session duration (seconds) |
 | `CANDIDATE_NAME` | anonymous | Candidate identifier |
-| `OUTPUT_DIR` | /output | Session recording directory |
+| `OUTPUT_DIR` | ./sessions | Session recording directory |
 | `SHELL` | /bin/bash | Shell to spawn in PTY |
 | `RECONNECT_WINDOW` | 300 | Reconnection time window (seconds) |
 | `INPUT_RATE_LIMIT` | 30 | Max chars/second (anti-paste) |
@@ -94,9 +94,14 @@ All configuration is done via environment variables:
 | `ENABLE_METRICS` | true | Enable /metrics endpoint |
 | `LOG_LEVEL` | info | Log level (debug, info, warn, error) |
 
+**Note**: Use `/output` for Docker containers (mounted volume), `./sessions` for local development.
+
 Example:
 ```bash
 CANDIDATE_NAME="john_doe" SESSION_TIMEOUT=3600 ./echobox
+
+# Or for Docker:
+docker run -v $(pwd)/sessions:/output -e OUTPUT_DIR=/output echobox:latest
 ```
 
 ## Makefile Targets
@@ -306,12 +311,12 @@ curl http://localhost:8080/health
 
 ### Planned (Phase 5)
 - Docker container isolation
-- Network isolation (no external access)
-- Read-only filesystem
-- Resource limits (CPU, memory)
+- Network isolation (optional - may need external access for some tasks)
+- **Writable filesystem** - Candidates need to create/modify files during tasks
+- Resource limits (CPU, memory, disk I/O)
 - Non-root user execution
-- Capability dropping
-- AppArmor/SELinux profiles
+- Capability dropping (CAP_DROP=ALL except necessary)
+- AppArmor/SELinux profiles (optional)
 
 ## Session Recording
 

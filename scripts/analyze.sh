@@ -85,7 +85,8 @@ if [ -f "$EVENTS_LOG" ]; then
 
     # Count paste attempts
     PASTE_COUNT=$(grep -c "paste_attempt" "$EVENTS_LOG" 2>/dev/null || echo "0")
-    if [ "$PASTE_COUNT" -gt 0 ]; then
+    PASTE_COUNT=$(echo "$PASTE_COUNT" | tr -d '\n ')
+    if [ "$PASTE_COUNT" -gt 0 ] 2>/dev/null; then
         echo -e "  ${RED}⚠${NC}  Paste attempts: $PASTE_COUNT"
     else
         echo -e "  ${GREEN}✓${NC}  No paste attempts detected"
@@ -93,7 +94,8 @@ if [ -f "$EVENTS_LOG" ]; then
 
     # Count rapid input
     RAPID_COUNT=$(grep -c "rapid_input" "$EVENTS_LOG" 2>/dev/null || echo "0")
-    if [ "$RAPID_COUNT" -gt 0 ]; then
+    RAPID_COUNT=$(echo "$RAPID_COUNT" | tr -d '\n ')
+    if [ "$RAPID_COUNT" -gt 0 ] 2>/dev/null; then
         echo -e "  ${YELLOW}⚠${NC}  Rapid input events: $RAPID_COUNT"
     else
         echo -e "  ${GREEN}✓${NC}  No rapid input detected"
@@ -101,7 +103,8 @@ if [ -f "$EVENTS_LOG" ]; then
 
     # Count focus loss
     BLUR_COUNT=$(grep -c '"gained":false' "$EVENTS_LOG" 2>/dev/null || echo "0")
-    if [ "$BLUR_COUNT" -gt 0 ]; then
+    BLUR_COUNT=$(echo "$BLUR_COUNT" | tr -d '\n ')
+    if [ "$BLUR_COUNT" -gt 0 ] 2>/dev/null; then
         echo -e "  ${YELLOW}ℹ${NC}  Focus loss events: $BLUR_COUNT"
     fi
 

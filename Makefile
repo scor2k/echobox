@@ -51,14 +51,17 @@ build-all: clean ## Build for all platforms (Linux, macOS, Windows)
 .PHONY: run
 run: build ## Build and run the server
 	@echo "$(COLOR_BLUE)Starting server...$(COLOR_RESET)"
-	@./$(BINARY_NAME)
+	@mkdir -p sessions
+	@OUTPUT_DIR=./sessions ./$(BINARY_NAME)
 
 .PHONY: run-dev
-run-dev: ## Run with development settings
+run-dev: build ## Run with development settings
 	@echo "$(COLOR_BLUE)Starting server in development mode...$(COLOR_RESET)"
+	@mkdir -p sessions
 	@CANDIDATE_NAME="dev_user" \
 	 SESSION_TIMEOUT=3600 \
 	 LOG_LEVEL=debug \
+	 OUTPUT_DIR=./sessions \
 	 ./$(BINARY_NAME)
 
 .PHONY: watch
