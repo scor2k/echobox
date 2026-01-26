@@ -7,6 +7,7 @@
     let term = null;
     let fitAddon = null;
     let connected = false;
+    let sessionEnded = false;
 
     // DOM elements
     const terminalEl = document.getElementById('terminal');
@@ -158,10 +159,18 @@
 
         ws.onclose = (event) => {
             connected = false;
-            updateStatus('disconnected', 'Reconnecting...');
             finishBtn.disabled = true;
 
             console.log('WebSocket closed:', event.code, event.reason);
+
+            // Don't reconnect if session ended
+            if (sessionEnded) {
+                console.log('Session ended, not reconnecting');
+                updateStatus('disconnected', 'Session Ended');
+                return;
+            }
+
+            updateStatus('disconnected', 'Reconnecting...');
 
             // Check if we have a reconnect token
             if (typeof window.attemptReconnect === 'function') {
@@ -213,6 +222,33 @@
                 };
                 reader.readAsArrayBuffer(event.data);
             } else {
+                // Check if it's a JSON message
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.type === 'session_ended') {
+                        console.log('Session ended:', msg.data);
+                        sessionEnded = true;
+
+                        // Show session ended message
+                        term.write('\r\n\r\n\x1b[1;33m=== Session Ended ===\x1b[0m\r\n');
+                        term.write('The shell has exited.\r\n');
+                        term.write('Your session has been saved.\r\n');
+                        term.write('You may close this window.\r\n');
+
+                        updateStatus('disconnected', 'Session Ended');
+                        finishBtn.disabled = true;
+
+                        // Clear reconnect token
+                        if (typeof window.clearReconnectToken === 'function') {
+                            window.clearReconnectToken();
+                        }
+
+                        return;
+                    }
+                } catch (e) {
+                    // Not JSON, treat as terminal data
+                }
+
                 // Handle text data
                 term.write(event.data);
             }

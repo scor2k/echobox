@@ -3,10 +3,10 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 
@@ -102,9 +102,32 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		for {
 			n, err := h.pty.Read(buf)
 			if err != nil {
-				if err != io.EOF {
-					log.Printf("PTY read error: %v", err)
+				// PTY closed - likely shell exited
+				log.Printf("PTY closed (shell exited): %v", err)
+
+				// Send session_ended message to client
+				endMsg := map[string]interface{}{
+					"type": "session_ended",
+					"data": map[string]string{
+						"reason": "shell_exited",
+					},
 				}
+				msgBytes, _ := json.Marshal(endMsg)
+				writeMu.Lock()
+				conn.WriteMessage(websocket.TextMessage, msgBytes)
+				writeMu.Unlock()
+
+				// Give client time to receive message
+				time.Sleep(500 * time.Millisecond)
+
+				// Trigger session finish
+				select {
+				case h.finishSignal <- struct{}{}:
+					log.Println("Triggered session finish after shell exit")
+				default:
+					// Already signaled
+				}
+
 				select {
 				case <-done:
 					// Already closed
