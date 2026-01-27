@@ -374,7 +374,8 @@ cat $SESSION/solutions/kampala.txt
 
 # Task 4
 cat $SESSION/solutions/berlin.txt
-# Should explain: Used strace, found .mystery.lock missing, created it with touch
+# Line 1 should be: SRE-DETECTIVE-427
+# Following lines: Investigation explanation (strace, found .mystery.lock missing, etc.)
 ```
 
 ---
