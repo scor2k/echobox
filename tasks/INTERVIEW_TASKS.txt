@@ -4,7 +4,7 @@
 ║                                                              ║
 ╚══════════════════════════════════════════════════════════════╝
 
-You have THREE tasks to complete. Read each carefully and save your
+You have FOUR tasks to complete. Read each carefully and save your
 solutions to ~/solutions/ directory as instructed.
 
 All your work in ~/solutions/ will be automatically captured and
