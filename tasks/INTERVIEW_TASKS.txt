@@ -1,0 +1,128 @@
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║                SRE TECHNICAL INTERVIEW TASKS                 ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+You have THREE tasks to complete. Read each carefully and save your
+solutions to ~/solutions/ directory as instructed.
+
+All your work in ~/solutions/ will be automatically captured and
+reviewed after the interview.
+
+Good luck!
+
+═══════════════════════════════════════════════════════════════
+TASK 1: "Saskatoon" — Log Analysis (Find Top IP)
+═══════════════════════════════════════════════════════════════
+
+OBJECTIVE:
+Find the IP address that made the most requests in an nginx access log.
+
+GIVEN:
+- nginx access log at: /var/log/nginx/access.log
+
+REQUIREMENTS:
+1. Analyze the log file
+2. Find the IP with the MOST requests
+3. Save ONLY the IP address to: ~/solutions/saskatoon.txt
+   (Just the IP, nothing else)
+
+EXAMPLE OUTPUT:
+192.168.1.42
+
+HINTS:
+- Standard nginx log format: IP - - [timestamp] "METHOD /path ..." status size
+- Use grep, awk, sort, uniq -c
+- Remember to sort numerically!
+
+═══════════════════════════════════════════════════════════════
+TASK 2: "Marrakech" — Word Frequency Analysis
+═══════════════════════════════════════════════════════════════
+
+OBJECTIVE:
+Find the SECOND most frequent word in a text file.
+
+GIVEN:
+- Text file at: ~/frankenstein.txt
+
+REQUIREMENTS:
+1. Count word frequency (case-insensitive)
+2. Remove punctuation before counting
+3. Find the SECOND most common word (not first!)
+4. Save the word in UPPERCASE to: ~/solutions/marrakech.txt
+   (Just the word, nothing else)
+
+EXAMPLE OUTPUT:
+MONSTER
+
+HINTS:
+- Convert to lowercase first
+- Remove punctuation: tr -d '[:punct:]'
+- Count words: sort | uniq -c
+- Sort by frequency: sort -rn
+- Get second line: head -2 | tail -1
+
+═══════════════════════════════════════════════════════════════
+TASK 3: "Kampala" — Strange Script Error
+═══════════════════════════════════════════════════════════════
+
+OBJECTIVE:
+Fix broken scripts that won't execute.
+
+SITUATION:
+Scripts in ~/deploy/ fail with:
+  -bash: ./deploy.sh: cannot execute: required file not found
+
+But the scripts exist and look syntactically correct!
+
+GIVEN:
+- Scripts in: ~/deploy/
+- Files: deploy.sh, backup.sh, restart.sh
+
+REQUIREMENTS:
+1. Diagnose why scripts won't execute
+2. Fix ALL scripts in ~/deploy/
+3. Verify they run successfully
+4. Save your explanation to: ~/solutions/kampala.txt
+
+Your explanation should include:
+- What was the problem?
+- How did you diagnose it?
+- What was the fix?
+
+HINTS:
+- Check file encoding/line endings
+- Scripts might have been edited on Windows
+- Use: file command, dos2unix, or sed
+- After fixing, verify with: ./deploy.sh
+
+═══════════════════════════════════════════════════════════════
+SUBMISSION
+═══════════════════════════════════════════════════════════════
+
+Your ~/solutions/ directory should contain:
+
+  ~/solutions/saskatoon.txt   - The top IP address
+  ~/solutions/marrakech.txt   - The second most frequent word (UPPERCASE)
+  ~/solutions/kampala.txt     - Your explanation of the fix
+
+All files in ~/solutions/ will be automatically captured when you
+finish the session.
+
+═══════════════════════════════════════════════════════════════
+TIPS
+═══════════════════════════════════════════════════════════════
+
+- Read each task carefully
+- Test your solutions before saving
+- Use the tools available: grep, awk, sed, python3, etc.
+- Check your output format (just the answer, no extra text)
+- Save to the EXACT filenames specified
+- Your commands are being recorded, so show your process
+
+═══════════════════════════════════════════════════════════════
+
+          Click "Finish Session" when you're done!
+
+═══════════════════════════════════════════════════════════════

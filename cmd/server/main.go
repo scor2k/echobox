@@ -106,6 +106,12 @@ func main() {
 			log.Printf("Error closing recorder: %v", err)
 		}
 
+		// Capture candidate solutions
+		log.Println("Capturing candidate solutions...")
+		if err := sessionMgr.CaptureSolutions(pty.GetCandidateHome()); err != nil {
+			log.Printf("Error capturing solutions: %v", err)
+		}
+
 		// Extract commands and complete session
 		log.Println("Extracting commands...")
 		if err := terminal.ExtractCommands(sessionMgr.GetSessionDir()); err != nil {
@@ -161,6 +167,12 @@ func main() {
 		log.Println("Closing recorder...")
 		if err := recorder.Close(); err != nil {
 			log.Printf("Error closing recorder: %v", err)
+		}
+
+		// Capture candidate solutions
+		log.Println("Capturing candidate solutions...")
+		if err := sessionMgr.CaptureSolutions(pty.GetCandidateHome()); err != nil {
+			log.Printf("Error capturing solutions: %v", err)
 		}
 
 		// Extract commands

@@ -15,12 +15,13 @@ import (
 
 // PTY represents a pseudo-terminal
 type PTY struct {
-	file    *os.File
-	cmd     *exec.Cmd
-	mu      sync.Mutex
-	closed  bool
-	readers []io.Reader
-	writers []io.Writer
+	file        *os.File
+	cmd         *exec.Cmd
+	mu          sync.Mutex
+	closed      bool
+	readers     []io.Reader
+	writers     []io.Writer
+	candidateHome string
 }
 
 // New creates a new PTY and spawns the specified shell as the given UID
@@ -35,6 +36,17 @@ func New(shell string, shellUID uint32) (*PTY, error) {
 		// Set ownership to the shell UID
 		os.Chown(homeDir, int(shellUID), int(shellUID))
 		os.Chown(homeDir+"/solutions", int(shellUID), int(shellUID))
+
+		// Setup candidate environment (copy tasks, create directories)
+		setupScript := "/tasks/setup-candidate-env.sh"
+		if _, err := os.Stat(setupScript); err == nil {
+			setupCmd := exec.Command("/bin/bash", setupScript, homeDir)
+			if err := setupCmd.Run(); err != nil {
+				log.Printf("Warning: Could not setup candidate environment: %v", err)
+			} else {
+				log.Printf("PTY: Candidate environment setup complete")
+			}
+		}
 	}
 
 	// Create command
@@ -73,13 +85,19 @@ func New(shell string, shellUID uint32) (*PTY, error) {
 	}
 
 	p := &PTY{
-		file:    ptmx,
-		cmd:     cmd,
-		readers: make([]io.Reader, 0),
-		writers: make([]io.Writer, 0),
+		file:          ptmx,
+		cmd:           cmd,
+		readers:       make([]io.Reader, 0),
+		writers:       make([]io.Writer, 0),
+		candidateHome: homeDir,
 	}
 
 	return p, nil
+}
+
+// GetCandidateHome returns the candidate's home directory path
+func (p *PTY) GetCandidateHome() string {
+	return p.candidateHome
 }
 
 // Read reads data from the PTY

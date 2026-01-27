@@ -239,3 +239,67 @@ func (m *Manager) VerifyFileHash(filename string) (bool, error) {
 
 	return actualHash == expectedHash, nil
 }
+
+// CaptureSolutions copies the candidate's solutions directory to session output
+// This preserves their work for review after the interview
+func (m *Manager) CaptureSolutions(candidateHome string) error {
+	solutionsDir := filepath.Join(candidateHome, "solutions")
+
+	// Check if solutions directory exists
+	if _, err := os.Stat(solutionsDir); os.IsNotExist(err) {
+		log.Printf("No solutions directory found at %s", solutionsDir)
+		return nil // Not an error, candidate may not have created it
+	}
+
+	// Create solutions subdirectory in session output
+	destDir := m.GetFilePath("solutions")
+	if err := os.MkdirAll(destDir, 0700); err != nil {
+		return fmt.Errorf("failed to create solutions directory: %w", err)
+	}
+
+	// Copy all files from candidate's solutions to session output
+	err := filepath.Walk(solutionsDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Skip the root directory itself
+		if path == solutionsDir {
+			return nil
+		}
+
+		// Calculate relative path
+		relPath, err := filepath.Rel(solutionsDir, path)
+		if err != nil {
+			return err
+		}
+
+		destPath := filepath.Join(destDir, relPath)
+
+		if info.IsDir() {
+			return os.MkdirAll(destPath, 0700)
+		}
+
+		// Copy file
+		data, err := os.ReadFile(path)
+		if err != nil {
+			log.Printf("Warning: Could not read solution file %s: %v", path, err)
+			return nil // Continue with other files
+		}
+
+		if err := os.WriteFile(destPath, data, 0400); err != nil {
+			log.Printf("Warning: Could not save solution file %s: %v", destPath, err)
+			return nil
+		}
+
+		log.Printf("Captured solution: %s", relPath)
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to copy solutions: %w", err)
+	}
+
+	log.Printf("Solutions captured from %s to %s", solutionsDir, destDir)
+	return nil
+}
