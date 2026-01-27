@@ -44,36 +44,14 @@ RUN apk add --no-cache \
     util-linux \
     && rm -rf /var/cache/apk/*
 
-# Create users for security separation
-# echobox (UID 1001): Runs the application, writes audit logs (no shell access)
-RUN addgroup -g 1001 echobox && \
-    adduser -D -u 1001 -G echobox -s /bin/false echobox
-
-# candidate (UID 1000): Interactive shell for tasks (cannot modify logs)
+# Create candidate user for running the application
 RUN addgroup -g 1000 candidate && \
     adduser -D -u 1000 -G candidate candidate
 
-# Create necessary directories with proper ownership
-# /output - owned by echobox (audit logs protected from candidate tampering)
-RUN mkdir -p /output && \
-    chown echobox:echobox /output && \
-    chmod 755 /output
-
-# /tasks - owned by root, read-only for all
-RUN mkdir -p /tasks && \
+# Create necessary directories
+RUN mkdir -p /output /tasks /home/candidate/solutions && \
+    chown -R candidate:candidate /output /home/candidate && \
     chmod 755 /tasks
-
-# /home/candidate - owned by candidate (for task solutions)
-RUN mkdir -p /home/candidate/solutions && \
-    chown -R candidate:candidate /home/candidate && \
-    chmod 755 /home/candidate
-
-# Verify user setup
-RUN echo "Verifying user configuration..." && \
-    id candidate && \
-    id echobox && \
-    ls -la /home/candidate && \
-    echo "User setup complete"
 
 # Set working directory
 WORKDIR /app
@@ -90,13 +68,11 @@ RUN ls -la /app/web/ && \
     echo "Web assets copied successfully"
 
 # Set permissions
-# /app owned by echobox (application user)
 RUN chmod +x /app/echobox && \
-    chown -R echobox:echobox /app
+    chown -R candidate:candidate /app
 
-# Switch to application user (not candidate!)
-# This ensures logs are owned by echobox, not candidate
-USER echobox
+# Switch to candidate user
+USER candidate
 
 # Expose port
 EXPOSE 8080

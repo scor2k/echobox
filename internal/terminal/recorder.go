@@ -47,28 +47,45 @@ func NewRecorder(sessionDir string, flushInterval time.Duration) (*Recorder, err
 		flushDone:  make(chan struct{}),
 	}
 
-	// Open all log files
+	// Open all log files with write-only permissions during recording
+	// Files will be made read-only on Close() to prevent tampering
 	var err error
 
-	r.keystrokesFile, err = os.Create(fmt.Sprintf("%s/keystrokes.log", sessionDir))
+	r.keystrokesFile, err = os.OpenFile(
+		fmt.Sprintf("%s/keystrokes.log", sessionDir),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0600, // Owner read/write during recording
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create keystrokes.log: %w", err)
 	}
 
-	r.terminalFile, err = os.Create(fmt.Sprintf("%s/terminal.log", sessionDir))
+	r.terminalFile, err = os.OpenFile(
+		fmt.Sprintf("%s/terminal.log", sessionDir),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0600,
+	)
 	if err != nil {
 		r.keystrokesFile.Close()
 		return nil, fmt.Errorf("failed to create terminal.log: %w", err)
 	}
 
-	r.timingFile, err = os.Create(fmt.Sprintf("%s/timing.log", sessionDir))
+	r.timingFile, err = os.OpenFile(
+		fmt.Sprintf("%s/timing.log", sessionDir),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0600,
+	)
 	if err != nil {
 		r.keystrokesFile.Close()
 		r.terminalFile.Close()
 		return nil, fmt.Errorf("failed to create timing.log: %w", err)
 	}
 
-	r.websocketFile, err = os.Create(fmt.Sprintf("%s/websocket.log", sessionDir))
+	r.websocketFile, err = os.OpenFile(
+		fmt.Sprintf("%s/websocket.log", sessionDir),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0600,
+	)
 	if err != nil {
 		r.keystrokesFile.Close()
 		r.terminalFile.Close()
@@ -76,7 +93,11 @@ func NewRecorder(sessionDir string, flushInterval time.Duration) (*Recorder, err
 		return nil, fmt.Errorf("failed to create websocket.log: %w", err)
 	}
 
-	r.eventsFile, err = os.Create(fmt.Sprintf("%s/events.log", sessionDir))
+	r.eventsFile, err = os.OpenFile(
+		fmt.Sprintf("%s/events.log", sessionDir),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		0600,
+	)
 	if err != nil {
 		r.keystrokesFile.Close()
 		r.terminalFile.Close()
@@ -260,7 +281,23 @@ func (r *Recorder) Close() error {
 	r.websocketFile.Close()
 	r.eventsFile.Close()
 
-	log.Println("Recorder: All logs closed")
+	// Make log files read-only to prevent tampering
+	// After session ends, files become 0400 (owner read-only)
+	logFiles := []string{
+		fmt.Sprintf("%s/keystrokes.log", r.sessionDir),
+		fmt.Sprintf("%s/terminal.log", r.sessionDir),
+		fmt.Sprintf("%s/timing.log", r.sessionDir),
+		fmt.Sprintf("%s/websocket.log", r.sessionDir),
+		fmt.Sprintf("%s/events.log", r.sessionDir),
+	}
+
+	for _, logFile := range logFiles {
+		if err := os.Chmod(logFile, 0400); err != nil {
+			log.Printf("Warning: Could not make %s read-only: %v", logFile, err)
+		}
+	}
+
+	log.Println("Recorder: All logs closed and protected (read-only)")
 	return nil
 }
 

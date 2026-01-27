@@ -25,26 +25,14 @@ type PTY struct {
 
 // New creates a new PTY and spawns the specified shell
 func New(shell string) (*PTY, error) {
-	// Create command
+	// Create command - shell runs as the same user as the application
 	cmd := exec.Command(shell)
 
 	// Set up environment
 	cmd.Env = append(os.Environ(),
 		"TERM=xterm-256color",
 		"COLORTERM=truecolor",
-		"HOME=/home/candidate",
-		"USER=candidate",
 	)
-
-	// Run shell as candidate user (UID 1000) even if app runs as echobox (UID 1001)
-	// This allows dual-user architecture: app writes logs as echobox, shell runs as candidate
-	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Credential: &syscall.Credential{
-			Uid: 1000, // candidate
-			Gid: 1000, // candidate
-		},
-	}
-	cmd.Dir = "/home/candidate"
 
 	// Start the command with a PTY
 	ptmx, err := pty.Start(cmd)
