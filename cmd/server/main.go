@@ -56,14 +56,14 @@ func main() {
 	detector := anticheat.NewDetector(cfg.InputRateLimit)
 	log.Printf("Anti-cheat detector initialized (rate limit: %d chars/sec)", cfg.InputRateLimit)
 
-	// Create PTY
-	pty, err := terminal.New(cfg.Shell)
+	// Create PTY with random shell UID for isolation
+	pty, err := terminal.New(cfg.Shell, cfg.ShellUID)
 	if err != nil {
 		log.Fatalf("Failed to create PTY: %v", err)
 	}
 	defer pty.Close()
 
-	log.Printf("PTY created, shell: %s", cfg.Shell)
+	log.Printf("PTY created, shell: %s (UID: %d)", cfg.Shell, cfg.ShellUID)
 
 	// Create WebSocket handler with recorder, detector, and session state
 	wsHandler := web.NewWSHandler(pty, recorder, detector, sessionMgr.GetState())

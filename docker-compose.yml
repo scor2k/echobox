@@ -27,15 +27,10 @@ services:
     # Resource limits
     mem_limit: 512m
     cpus: 0.5
-    # Security settings (required for dual-user architecture)
+    # Security settings
+    # Note: Running as root for UID isolation (generates random shell UID)
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - SETUID
-      - SETGID
     # Don't restart on exit (single-use container)
     restart: "no"
     # Optional: Network isolation (uncomment to isolate)
@@ -64,15 +59,10 @@ services:
     mem_limit: 512m
     mem_reservation: 256m
     cpus: 0.5
-    # Security hardening
+    # Security settings
+    # Note: Running as root for UID isolation (generates random shell UID)
     security_opt:
       - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - SETUID
-      - SETGID
     # Single-use container
     restart: "no"
     # Read-only root filesystem (with writable volumes)

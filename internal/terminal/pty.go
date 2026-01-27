@@ -23,16 +23,48 @@ type PTY struct {
 	writers []io.Writer
 }
 
-// New creates a new PTY and spawns the specified shell
-func New(shell string) (*PTY, error) {
-	// Create command - shell runs as the same user as the application
+// New creates a new PTY and spawns the specified shell as the given UID
+// The shell runs as shellUID (random, isolated), while logs stay owned by root
+func New(shell string, shellUID uint32) (*PTY, error) {
+	// Create home directory for this UID if it doesn't exist
+	homeDir := fmt.Sprintf("/home/candidate-%d", shellUID)
+	if err := os.MkdirAll(homeDir+"/solutions", 0755); err != nil {
+		log.Printf("Warning: Could not create home directory: %v", err)
+		homeDir = "/tmp" // Fallback
+	} else {
+		// Set ownership to the shell UID
+		os.Chown(homeDir, int(shellUID), int(shellUID))
+		os.Chown(homeDir+"/solutions", int(shellUID), int(shellUID))
+	}
+
+	// Create command
 	cmd := exec.Command(shell)
 
-	// Set up environment
-	cmd.Env = append(os.Environ(),
+	// Set up environment for the shell user
+	cmd.Env = []string{
 		"TERM=xterm-256color",
 		"COLORTERM=truecolor",
-	)
+		fmt.Sprintf("HOME=%s", homeDir),
+		fmt.Sprintf("USER=candidate-%d", shellUID),
+		"PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+	}
+
+	// Set working directory
+	cmd.Dir = homeDir
+
+	// Run shell as random UID for isolation (only if running as root)
+	// This prevents candidates from tampering with each other's sessions
+	if os.Getuid() == 0 {
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			Credential: &syscall.Credential{
+				Uid: shellUID,
+				Gid: shellUID,
+			},
+		}
+		log.Printf("PTY: Starting shell as UID %d (home: %s)", shellUID, homeDir)
+	} else {
+		log.Printf("PTY: Starting shell as current user (not root, cannot setuid)")
+	}
 
 	// Start the command with a PTY
 	ptmx, err := pty.Start(cmd)

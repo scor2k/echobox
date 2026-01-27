@@ -178,10 +178,6 @@ docker-run: docker-build ## Build and run Docker container
 		--memory="512m" \
 		--cpus="0.5" \
 		--security-opt=no-new-privileges:true \
-		--cap-drop=ALL \
-		--cap-add=CHOWN \
-		--cap-add=SETUID \
-		--cap-add=SETGID \
 		--name echobox-dev \
 		echobox:latest
 	@echo "$(COLOR_YELLOW)URL: http://localhost:$(DOCKER_PORT)$(COLOR_RESET)"
@@ -200,10 +196,6 @@ docker-run-prod: docker-build-prod ## Build and run production container with st
 		--memory-reservation="256m" \
 		--cpus="0.5" \
 		--security-opt=no-new-privileges:true \
-		--cap-drop=ALL \
-		--cap-add=CHOWN \
-		--cap-add=SETUID \
-		--cap-add=SETGID \
 		--restart=no \
 		--name echobox-prod-$(shell date +%s) \
 		echobox:prod
@@ -238,11 +230,12 @@ docker-logs: ## Show container logs
 	@docker logs -f echobox-dev 2>/dev/null || docker logs -f echobox-prod 2>/dev/null || echo "$(COLOR_YELLOW)No running containers$(COLOR_RESET)"
 
 .PHONY: docker-exec
-docker-exec: ## Execute shell in running container (as candidate user)
-	@echo "$(COLOR_BLUE)Opening shell as candidate user (UID 1000)...$(COLOR_RESET)"
-	@docker exec -it --user candidate echobox-dev /bin/bash 2>/dev/null || \
-	 docker exec -it --user candidate echobox-prod /bin/bash 2>/dev/null || \
-	 docker exec -it --user candidate $$(docker ps -q -f name=echobox-prod | head -1) /bin/bash 2>/dev/null || \
+docker-exec: ## Execute shell in running container (as root for debugging)
+	@echo "$(COLOR_BLUE)Opening shell in container...$(COLOR_RESET)"
+	@echo "$(COLOR_YELLOW)Note: Shell UID in web terminal is randomized for security$(COLOR_RESET)"
+	@docker exec -it echobox-dev /bin/bash 2>/dev/null || \
+	 docker exec -it echobox-prod /bin/bash 2>/dev/null || \
+	 docker exec -it $$(docker ps -q -f name=echobox-prod | head -1) /bin/bash 2>/dev/null || \
 	 echo "$(COLOR_YELLOW)No running containers$(COLOR_RESET)"
 
 .PHONY: docker-clean

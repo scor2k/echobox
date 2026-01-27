@@ -1,6 +1,8 @@
 package config
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 	"os"
 	"strconv"
@@ -29,6 +31,7 @@ type Config struct {
 
 	// Security
 	NetworkIsolated bool
+	ShellUID        uint32 // Random UID for shell user (generated at startup)
 
 	// Observability
 	EnableMetrics bool
@@ -40,6 +43,11 @@ type Config struct {
 
 // Load reads configuration from environment variables with sensible defaults
 func Load() (*Config, error) {
+	// Generate random UID for shell user (10000-60000 range)
+	// This UID is permanent for the container lifetime
+	// Provides isolation: different containers = different UIDs
+	shellUID := generateShellUID()
+
 	cfg := &Config{
 		Port:            getEnvInt("PORT", 8080),
 		CandidateName:   getEnv("CANDIDATE_NAME", "anonymous"),
@@ -50,6 +58,7 @@ func Load() (*Config, error) {
 		FlushInterval:   time.Duration(getEnvInt("FLUSH_INTERVAL", 10)) * time.Second,
 		InputRateLimit:  getEnvInt("INPUT_RATE_LIMIT", 30),
 		NetworkIsolated: getEnvBool("NETWORK_ISOLATED", true),
+		ShellUID:        shellUID,
 		EnableMetrics:   getEnvBool("ENABLE_METRICS", true),
 		LogLevel:        getEnv("LOG_LEVEL", "info"),
 		MOTD:            getEnv("MOTD", defaultMOTD()),
@@ -123,4 +132,19 @@ NOTES:
 
 Good luck! 🚀
 `
+}
+
+// generateShellUID generates a random UID for shell isolation
+// Range: 10000-60000 (avoids system UIDs and gives 50k unique values)
+// Each container gets a unique UID, preventing cross-session tampering
+func generateShellUID() uint32 {
+	var b [4]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		// Fallback to timestamp-based if crypto/rand fails
+		return uint32(10000 + (time.Now().UnixNano() % 50000))
+	}
+
+	// Convert to uint32 and constrain to range [10000, 60000]
+	randomValue := binary.BigEndian.Uint32(b[:])
+	return 10000 + (randomValue % 50000)
 }

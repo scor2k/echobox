@@ -44,14 +44,11 @@ RUN apk add --no-cache \
     util-linux \
     && rm -rf /var/cache/apk/*
 
-# Create candidate user for running the application
-RUN addgroup -g 1000 candidate && \
-    adduser -D -u 1000 -G candidate candidate
-
-# Create necessary directories
-RUN mkdir -p /output /tasks /home/candidate/solutions && \
-    chown -R candidate:candidate /output /home/candidate && \
-    chmod 755 /tasks
+# Create base directories
+# Note: Home directories for random UIDs created dynamically by app
+RUN mkdir -p /output /tasks /home && \
+    chmod 755 /tasks && \
+    chmod 777 /home
 
 # Set working directory
 WORKDIR /app
@@ -68,11 +65,13 @@ RUN ls -la /app/web/ && \
     echo "Web assets copied successfully"
 
 # Set permissions
-RUN chmod +x /app/echobox && \
-    chown -R candidate:candidate /app
+RUN chmod +x /app/echobox
 
-# Switch to candidate user
-USER candidate
+# NOTE: App runs as ROOT to enable UID isolation
+# Each shell gets a random UID (10000-60000)
+# Logs stay owned by root (UID 0)
+# Shell user (random UID) cannot modify root-owned logs
+# This provides isolation even with shared volumes
 
 # Expose port
 EXPOSE 8080
