@@ -31,11 +31,6 @@ REQUIREMENTS:
 EXAMPLE OUTPUT:
 192.168.1.42
 
-HINTS:
-- Standard nginx log format: IP - - [timestamp] "METHOD /path ..." status size
-- Use grep, awk, sort, uniq -c
-- Remember to sort numerically!
-
 ═══════════════════════════════════════════════════════════════
 TASK 2: "Marrakech" — Word Frequency Analysis
 ═══════════════════════════════════════════════════════════════
@@ -55,13 +50,6 @@ REQUIREMENTS:
 
 EXAMPLE OUTPUT:
 MONSTER
-
-HINTS:
-- Convert to lowercase first
-- Remove punctuation: tr -d '[:punct:]'
-- Count words: sort | uniq -c
-- Sort by frequency: sort -rn
-- Get second line: head -2 | tail -1
 
 ═══════════════════════════════════════════════════════════════
 TASK 3: "Kampala" — Strange Script Error
@@ -91,24 +79,19 @@ Your explanation should include:
 - How did you diagnose it?
 - What was the fix?
 
-HINTS:
-- Check file encoding/line endings
-- Scripts might have been edited on Windows
-- Use: file command, dos2unix, or sed
-- After fixing, verify with: ./deploy.sh
-
 ═══════════════════════════════════════════════════════════════
 TASK 4: "Berlin" — Binary Detective
 ═══════════════════════════════════════════════════════════════
 
 OBJECTIVE:
-Fix a mysterious binary that crashes without explanation.
+Fix a mysterious binary that crashes with minimal information.
 
 SITUATION:
-A binary called `mystery` in your home directory crashes immediately
-when you run it. No error message, no logs, just exit code 1.
+A binary called `mystery` in your home directory initializes but then
+shows "Status: locked" and exits with code 1.
 
-You DON'T have the source code. You must use debugging tools.
+You DON'T have the source code. You must use debugging tools to
+determine what's missing.
 
 GIVEN:
 - Binary at: ~/mystery
@@ -124,21 +107,13 @@ Your solution file format:
 Line 1: The VERIFICATION CODE (exactly as printed)
 Line 2+: Your investigation explanation (tools used, what was wrong, how you fixed it)
 
-HINTS:
-- Try running it first: ./mystery
-- Use strace to see system calls: strace ./mystery
-- Use strings to see readable text: strings mystery
-- Check what files it tries to access
-- The fix might be creating a missing file
-- When it works, it will print a verification code
-- Copy that code EXACTLY to line 1 of your solution
-
 EXAMPLE SOLUTION FILE:
 SRE-DETECTIVE-427
 
-I used strace to trace system calls and found the binary was looking for
-a missing lock file. Created the file and the binary ran successfully,
-printing the verification code above.
+Used strace ./mystery 2>&1 | grep stat to trace system calls.
+Found the binary was checking for .mystery.lock file (ENOENT error).
+Created the file with: touch .mystery.lock
+Ran ./mystery successfully and it printed the verification code above.
 
 ═══════════════════════════════════════════════════════════════
 SUBMISSION
