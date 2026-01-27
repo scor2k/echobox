@@ -116,13 +116,13 @@ GIVEN:
 REQUIREMENTS:
 1. Determine WHY the binary crashes (use debugging tools!)
 2. Fix the issue so the binary runs successfully
-3. Save your investigation and solution to: ~/solutions/berlin.txt
+3. The binary will print a VERIFICATION CODE when it works
+4. Copy the verification code to your solution file
+5. Save your solution to: ~/solutions/berlin.txt
 
-Your report should include:
-- What tools did you use to investigate?
-- What was the binary looking for?
-- How did you fix it?
-- What was the final result?
+Your solution file format:
+Line 1: The VERIFICATION CODE (exactly as printed)
+Line 2+: Your investigation explanation (tools used, what was wrong, how you fixed it)
 
 HINTS:
 - Try running it first: ./mystery
@@ -130,12 +130,15 @@ HINTS:
 - Use strings to see readable text: strings mystery
 - Check what files it tries to access
 - The fix might be creating a missing file
+- When it works, it will print a verification code
+- Copy that code EXACTLY to line 1 of your solution
 
-EXPECTED OUTPUT:
-After fixing, ./mystery should print something like:
-  Mystery Application v1.0
-  Status: Running successfully
-  ...
+EXAMPLE SOLUTION FILE:
+SRE-DETECTIVE-427
+
+I used strace to trace system calls and found the binary was looking for
+a missing lock file. Created the file and the binary ran successfully,
+printing the verification code above.
 
 ═══════════════════════════════════════════════════════════════
 SUBMISSION

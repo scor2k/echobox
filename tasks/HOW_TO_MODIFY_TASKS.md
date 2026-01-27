@@ -240,24 +240,43 @@ strace ./mystery 2>&1 | grep -E "open|stat|access"
 # Shows: stat(".mystery.lock", ...) = -1 ENOENT (No such file or directory)
 
 strings mystery | grep -i lock
-# Shows: ".mystery.lock"
+# Shows: ".mystery.lock" (among other strings)
 
 # Solution:
 touch .mystery.lock
 ./mystery
-# Success! Binary runs
-
-# Expected output:
+# Success! Binary runs and prints:
 # Mystery Application v1.0
 # Status: Running successfully
 # Lock file found: .mystery.lock
-# Service started on port 9999
+# Initialization complete
+#
+# ═══════════════════════════════════════════════
+#   VERIFICATION CODE: SRE-DETECTIVE-427
+# ═══════════════════════════════════════════════
+#
+# Copy this code to your solution file!
 
-# Answer explanation:
-# The binary checks for .mystery.lock file in current directory
-# Using strace showed stat(".mystery.lock") failing with ENOENT
-# Creating the file allows the binary to start
-# This simulates real-world debugging of unknown binaries
+# Answer file format (~/solutions/berlin.txt):
+# Line 1: SRE-DETECTIVE-427
+# Line 2+: Explanation
+
+# Example solution:
+SRE-DETECTIVE-427
+
+Used strace ./mystery 2>&1 | grep stat to trace system calls.
+Found: stat(".mystery.lock") = -1 ENOENT
+Created file: touch .mystery.lock
+Binary ran successfully and printed verification code.
+
+# Verification Code Details:
+# The code is obfuscated in the binary:
+# - part1: byte array (not visible as plain string)
+# - part2: byte array (not visible as plain string)
+# - part3: byte array (not visible as plain string)
+# - suffix: generated from numbers (not plain string)
+# This makes it harder to find with strings command
+# Candidate must actually run the binary to get the code!
 ```
 
 ---
