@@ -2,7 +2,10 @@
 #
 # replay.sh - Replay recorded terminal sessions
 #
-# Usage: ./replay.sh <session_directory>
+# Usage: ./replay.sh <session_directory> [--instant]
+#
+# Options:
+#   --instant    Dump terminal log instantly without delays
 #
 
 set -e
@@ -14,21 +17,40 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Parse arguments
+INSTANT_MODE=0
+SESSION_DIR=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --instant)
+            INSTANT_MODE=1
+            shift
+            ;;
+        *)
+            SESSION_DIR="$1"
+            shift
+            ;;
+    esac
+done
+
 # Check if session directory is provided
-if [ $# -eq 0 ]; then
+if [ -z "$SESSION_DIR" ]; then
     echo -e "${RED}Error: No session directory specified${NC}"
     echo ""
-    echo "Usage: $0 <session_directory>"
+    echo "Usage: $0 <session_directory> [--instant]"
     echo ""
-    echo "Example:"
+    echo "Options:"
+    echo "  --instant    Dump terminal log instantly without delays"
+    echo ""
+    echo "Examples:"
     echo "  $0 sessions/john_doe_2024-01-26_14-30-00_a3f7b9c1"
+    echo "  $0 sessions/john_doe_2024-01-26_14-30-00_a3f7b9c1 --instant"
     echo ""
     echo "Available sessions:"
     find sessions -maxdepth 1 -type d -name "*_*_*" 2>/dev/null | sort -r | head -10
     exit 1
 fi
-
-SESSION_DIR="$1"
 
 # Check if directory exists
 if [ ! -d "$SESSION_DIR" ]; then
@@ -95,36 +117,62 @@ if [ -f "$METADATA" ] && command -v jq &> /dev/null; then
     fi
 fi
 
-# Ask for playback speed
-echo -e "${YELLOW}Playback Options:${NC}"
-echo "  1) Real-time (1x speed)"
-echo "  2) Fast (2x speed)"
-echo "  3) Very fast (5x speed)"
-echo ""
-read -p "Select option [1-3, default: 1]: " SPEED_OPTION
+# If instant mode flag was provided, skip interactive menu
+if [ $INSTANT_MODE -eq 1 ]; then
+    echo -e "${GREEN}▶ Instant replay (no delays)${NC}"
+    echo ""
+    echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
+    echo ""
+    # Just dump the terminal log without timing delays
+    cat "$TERMINAL_LOG"
+else
+    # Ask for playback speed
+    echo -e "${YELLOW}Playback Options:${NC}"
+    echo "  1) Real-time (1x speed)"
+    echo "  2) Fast (2x speed)"
+    echo "  3) Very fast (5x speed)"
+    echo "  4) Instant (no delays - just dump the log)"
+    echo ""
+    read -p "Select option [1-4, default: 1]: " SPEED_OPTION
 
-case "$SPEED_OPTION" in
-    2)
-        SPEED_DIVISOR=2
-        echo -e "${GREEN}▶ Playing at 2x speed${NC}"
-        ;;
-    3)
-        SPEED_DIVISOR=5
-        echo -e "${GREEN}▶ Playing at 5x speed${NC}"
-        ;;
-    *)
-        SPEED_DIVISOR=1
-        echo -e "${GREEN}▶ Playing at real-time speed${NC}"
-        ;;
-esac
-
-echo ""
-echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
-echo ""
-sleep 1
-
-# Replay the session
-scriptreplay -t "$TIMING_LOG" -s "$TERMINAL_LOG" -d "$SPEED_DIVISOR"
+    case "$SPEED_OPTION" in
+        2)
+            SPEED_DIVISOR=2
+            echo -e "${GREEN}▶ Playing at 2x speed${NC}"
+            echo ""
+            echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
+            echo ""
+            sleep 1
+            scriptreplay -t "$TIMING_LOG" -s "$TERMINAL_LOG" -d "$SPEED_DIVISOR"
+            ;;
+        3)
+            SPEED_DIVISOR=5
+            echo -e "${GREEN}▶ Playing at 5x speed${NC}"
+            echo ""
+            echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
+            echo ""
+            sleep 1
+            scriptreplay -t "$TIMING_LOG" -s "$TERMINAL_LOG" -d "$SPEED_DIVISOR"
+            ;;
+        4)
+            echo -e "${GREEN}▶ Instant replay (no delays)${NC}"
+            echo ""
+            echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
+            echo ""
+            # Just dump the terminal log without timing delays
+            cat "$TERMINAL_LOG"
+            ;;
+        *)
+            SPEED_DIVISOR=1
+            echo -e "${GREEN}▶ Playing at real-time speed${NC}"
+            echo ""
+            echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
+            echo ""
+            sleep 1
+            scriptreplay -t "$TIMING_LOG" -s "$TERMINAL_LOG" -d "$SPEED_DIVISOR"
+            ;;
+    esac
+fi
 
 echo ""
 echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
