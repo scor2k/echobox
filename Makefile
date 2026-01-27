@@ -204,20 +204,30 @@ docker-run-prod: docker-build-prod ## Build and run production container with st
 	@echo "$(COLOR_YELLOW)URL: http://localhost:$(DOCKER_PORT)$(COLOR_RESET)"
 
 .PHONY: docker-compose-up
-docker-compose-up: ## Start with docker-compose (development)
-	@echo "$(COLOR_BLUE)Starting with docker-compose...$(COLOR_RESET)"
+docker-compose-up: ## Start all 5 production instances
+	@echo "$(COLOR_BLUE)Starting all 5 production instances...$(COLOR_RESET)"
 	@mkdir -p sessions tasks
 	@chmod 777 sessions 2>/dev/null || true
-	@docker-compose up echobox-dev
+	@docker-compose up -d
+	@echo "$(COLOR_GREEN)✓ All 5 instances started$(COLOR_RESET)"
+	@echo "$(COLOR_YELLOW)URLs:$(COLOR_RESET)"
+	@echo "  Instance 1: http://localhost:6780 (${CANDIDATE_1:-candidate-1})"
+	@echo "  Instance 2: http://localhost:6781 (${CANDIDATE_2:-candidate-2})"
+	@echo "  Instance 3: http://localhost:6782 (${CANDIDATE_3:-candidate-3})"
+	@echo "  Instance 4: http://localhost:6783 (${CANDIDATE_4:-candidate-4})"
+	@echo "  Instance 5: http://localhost:6784 (${CANDIDATE_5:-candidate-5})"
 
 .PHONY: docker-compose-prod
-docker-compose-prod: ## Start with docker-compose (production)
-	@echo "$(COLOR_BLUE)Starting production container with docker-compose...$(COLOR_RESET)"
+docker-compose-prod: docker-compose-up ## Alias for docker-compose-up
+
+.PHONY: docker-compose-one
+docker-compose-one: ## Start single instance (specify with INSTANCE=1-5)
+	@echo "$(COLOR_BLUE)Starting instance ${INSTANCE:-1}...$(COLOR_RESET)"
 	@mkdir -p sessions tasks
 	@chmod 777 sessions 2>/dev/null || true
-	@docker-compose up -d echobox-prod
-	@echo "$(COLOR_GREEN)✓ Production container started$(COLOR_RESET)"
-	@echo "$(COLOR_YELLOW)URL: http://localhost:${DOCKER_PORT:-8080}$(COLOR_RESET)"
+	@docker-compose up -d echobox-prod-${INSTANCE:-1}
+	@echo "$(COLOR_GREEN)✓ Instance ${INSTANCE:-1} started$(COLOR_RESET)"
+	@echo "$(COLOR_YELLOW)URL: http://localhost:$$((6780 + ${INSTANCE:-1} - 1))$(COLOR_RESET)"
 
 .PHONY: docker-stop
 docker-stop: ## Stop all echobox containers
@@ -226,17 +236,15 @@ docker-stop: ## Stop all echobox containers
 	@echo "$(COLOR_GREEN)✓ Containers stopped$(COLOR_RESET)"
 
 .PHONY: docker-logs
-docker-logs: ## Show container logs
-	@docker logs -f echobox-dev 2>/dev/null || docker logs -f echobox-prod 2>/dev/null || echo "$(COLOR_YELLOW)No running containers$(COLOR_RESET)"
+docker-logs: ## Show container logs (specify INSTANCE=1-5, default: 1)
+	@docker logs -f echobox-prod-${INSTANCE:-1} 2>/dev/null || echo "$(COLOR_YELLOW)Instance ${INSTANCE:-1} not running$(COLOR_RESET)"
 
 .PHONY: docker-exec
-docker-exec: ## Execute shell in running container (as root for debugging)
-	@echo "$(COLOR_BLUE)Opening shell in container...$(COLOR_RESET)"
+docker-exec: ## Execute shell in running container (specify INSTANCE=1-5, default: 1)
+	@echo "$(COLOR_BLUE)Opening shell in instance ${INSTANCE:-1}...$(COLOR_RESET)"
 	@echo "$(COLOR_YELLOW)Note: Shell UID in web terminal is randomized for security$(COLOR_RESET)"
-	@docker exec -it echobox-dev /bin/bash 2>/dev/null || \
-	 docker exec -it echobox-prod /bin/bash 2>/dev/null || \
-	 docker exec -it $$(docker ps -q -f name=echobox-prod | head -1) /bin/bash 2>/dev/null || \
-	 echo "$(COLOR_YELLOW)No running containers$(COLOR_RESET)"
+	@docker exec -it echobox-prod-${INSTANCE:-1} /bin/bash 2>/dev/null || \
+	 echo "$(COLOR_YELLOW)Instance ${INSTANCE:-1} not running$(COLOR_RESET)"
 
 .PHONY: docker-clean
 docker-clean: ## Remove echobox images and containers
@@ -246,8 +254,21 @@ docker-clean: ## Remove echobox images and containers
 	@echo "$(COLOR_GREEN)✓ Docker resources cleaned$(COLOR_RESET)"
 
 .PHONY: docker-inspect
-docker-inspect: ## Inspect running container
-	@docker inspect echobox-dev 2>/dev/null || docker inspect echobox-prod 2>/dev/null || echo "$(COLOR_YELLOW)No running containers$(COLOR_RESET)"
+docker-inspect: ## Inspect running container (specify INSTANCE=1-5)
+	@docker inspect echobox-prod-${INSTANCE:-1} 2>/dev/null || echo "$(COLOR_YELLOW)Instance ${INSTANCE:-1} not running$(COLOR_RESET)"
+
+.PHONY: docker-status
+docker-status: ## Show status of all instances
+	@echo "$(COLOR_BLUE)Interview Instance Status:$(COLOR_RESET)"
+	@for i in 1 2 3 4 5; do \
+		STATUS=$$(docker ps -f name=echobox-prod-$$i --format "{{.Status}}" 2>/dev/null); \
+		CANDIDATE=$$(docker inspect echobox-prod-$$i -f '{{.Config.Env}}' 2>/dev/null | grep -o 'CANDIDATE_NAME=[^ ]*' | cut -d= -f2 || echo "candidate-$$i"); \
+		if [ -n "$$STATUS" ]; then \
+			echo "  $(COLOR_GREEN)✓$(COLOR_RESET) Instance $$i (port $$((6780 + $$i - 1))): $$CANDIDATE - $$STATUS"; \
+		else \
+			echo "  $(COLOR_YELLOW)○$(COLOR_RESET) Instance $$i (port $$((6780 + $$i - 1))): Not running"; \
+		fi; \
+	done
 
 ##@ Cleanup
 

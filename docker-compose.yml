@@ -1,77 +1,141 @@
 version: '3.8'
 
 services:
-  # Development/testing configuration
-  # IMPORTANT: Before first run, ensure volumes are writable:
-  #   mkdir -p sessions tasks && chmod 777 sessions/
-  echobox-dev:
+  # Production Interview Instance 1
+  # IMPORTANT: Before first run: chmod 777 sessions/
+  echobox-prod-1:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         TARGETARCH: arm64
-    container_name: echobox-dev
+    container_name: echobox-prod-1
     ports:
-      - "${DOCKER_PORT:-8080}:8080"
-    volumes:
-      # Mount sessions directory for recordings
-      - ./sessions:/output
-      # Mount tasks directory (read-only)
-      - ./tasks:/tasks:ro
-    environment:
-      CANDIDATE_NAME: dev_candidate
-      SESSION_TIMEOUT: 3600
-      LOG_LEVEL: debug
-      OUTPUT_DIR: /output
-      RECONNECT_WINDOW: 300
-    # Resource limits
-    mem_limit: 512m
-    cpus: 0.5
-    # Security settings
-    # Note: Running as root for UID isolation (generates random shell UID)
-    security_opt:
-      - no-new-privileges:true
-    # Don't restart on exit (single-use container)
-    restart: "no"
-    # Optional: Network isolation (uncomment to isolate)
-    # network_mode: none
-
-  # Production configuration
-  # IMPORTANT: Before first run, ensure volumes are writable:
-  #   chmod 777 sessions/  (or chown -R 1000:1000 sessions/)
-  echobox-prod:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        TARGETARCH: arm64
-    ports:
-      - "${DOCKER_PORT:-6780}:8080"
+      - "6780:8080"
     volumes:
       - ./sessions:/output
       - ./tasks:/tasks:ro
     environment:
-      CANDIDATE_NAME: ${CANDIDATE_NAME:-candidate}
+      CANDIDATE_NAME: ${CANDIDATE_1:-candidate-1}
       SESSION_TIMEOUT: ${SESSION_TIMEOUT:-7200}
       LOG_LEVEL: info
       OUTPUT_DIR: /output
-    # Stricter resource limits for production
     mem_limit: 512m
     mem_reservation: 256m
     cpus: 0.5
-    # Security settings
-    # Note: Running as root for UID isolation (generates random shell UID)
     security_opt:
       - no-new-privileges:true
-    # Single-use container
     restart: "no"
-    # Read-only root filesystem (with writable volumes)
-    # Commented out because candidates need write access for tasks
-    # read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=100m
-    # Optional: Network isolation
-    # network_mode: none
+
+  # Production Interview Instance 2
+  echobox-prod-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGETARCH: arm64
+    container_name: echobox-prod-2
+    ports:
+      - "6781:8080"
+    volumes:
+      - ./sessions:/output
+      - ./tasks:/tasks:ro
+    environment:
+      CANDIDATE_NAME: ${CANDIDATE_2:-candidate-2}
+      SESSION_TIMEOUT: ${SESSION_TIMEOUT:-7200}
+      LOG_LEVEL: info
+      OUTPUT_DIR: /output
+    mem_limit: 512m
+    mem_reservation: 256m
+    cpus: 0.5
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+
+  # Production Interview Instance 3
+  echobox-prod-3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGETARCH: arm64
+    container_name: echobox-prod-3
+    ports:
+      - "6782:8080"
+    volumes:
+      - ./sessions:/output
+      - ./tasks:/tasks:ro
+    environment:
+      CANDIDATE_NAME: ${CANDIDATE_3:-candidate-3}
+      SESSION_TIMEOUT: ${SESSION_TIMEOUT:-7200}
+      LOG_LEVEL: info
+      OUTPUT_DIR: /output
+    mem_limit: 512m
+    mem_reservation: 256m
+    cpus: 0.5
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+
+  # Production Interview Instance 4
+  echobox-prod-4:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGETARCH: arm64
+    container_name: echobox-prod-4
+    ports:
+      - "6783:8080"
+    volumes:
+      - ./sessions:/output
+      - ./tasks:/tasks:ro
+    environment:
+      CANDIDATE_NAME: ${CANDIDATE_4:-candidate-4}
+      SESSION_TIMEOUT: ${SESSION_TIMEOUT:-7200}
+      LOG_LEVEL: info
+      OUTPUT_DIR: /output
+    mem_limit: 512m
+    mem_reservation: 256m
+    cpus: 0.5
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
+
+  # Production Interview Instance 5
+  echobox-prod-5:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TARGETARCH: arm64
+    container_name: echobox-prod-5
+    ports:
+      - "6784:8080"
+    volumes:
+      - ./sessions:/output
+      - ./tasks:/tasks:ro
+    environment:
+      CANDIDATE_NAME: ${CANDIDATE_5:-candidate-5}
+      SESSION_TIMEOUT: ${SESSION_TIMEOUT:-7200}
+      LOG_LEVEL: info
+      OUTPUT_DIR: /output
+    mem_limit: 512m
+    mem_reservation: 256m
+    cpus: 0.5
+    security_opt:
+      - no-new-privileges:true
+    restart: "no"
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=100m
 
 # Named volumes for persistence
 volumes:
