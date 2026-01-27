@@ -312,7 +312,7 @@ func ExtractCommands(sessionDir string) error {
 		return fmt.Errorf("failed to read terminal.log: %w", err)
 	}
 
-	commandsFile, err := os.Create(commandsLogPath)
+	commandsFile, err := os.OpenFile(commandsLogPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to create commands.log: %w", err)
 	}
@@ -328,6 +328,12 @@ func ExtractCommands(sessionDir string) error {
 	// TODO: Implement proper command extraction with ANSI parsing
 	commandsFile.WriteString("# Command extraction not yet implemented\n")
 	commandsFile.WriteString("# Use 'scriptreplay' to view the full session\n")
+
+	// Make file read-only immediately after writing
+	commandsFile.Close()
+	if err := os.Chmod(commandsLogPath, 0400); err != nil {
+		log.Printf("Warning: Could not protect commands.log: %v", err)
+	}
 
 	return nil
 }

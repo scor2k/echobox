@@ -366,7 +366,7 @@ func generateRecommendations(events []Event, stats *TypingStats) []string {
 	return recommendations
 }
 
-// SaveReport saves the analysis report to a JSON file
+// SaveReport saves the analysis report to a JSON file with restricted permissions
 func SaveReport(report *AnalysisReport, sessionDir string) error {
 	reportPath := fmt.Sprintf("%s/analysis.json", sessionDir)
 
@@ -375,7 +375,9 @@ func SaveReport(report *AnalysisReport, sessionDir string) error {
 		return fmt.Errorf("failed to marshal report: %w", err)
 	}
 
-	if err := os.WriteFile(reportPath, data, 0644); err != nil {
+	// Create with read-only permissions (root only access)
+	// Mode 0400 = owner (root) read-only, no access for others
+	if err := os.WriteFile(reportPath, data, 0400); err != nil {
 		return fmt.Errorf("failed to write report: %w", err)
 	}
 

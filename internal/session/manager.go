@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -47,8 +48,10 @@ func NewManager(baseDir, candidateName string, reconnectWindow time.Duration) (*
 	sessionDirName := fmt.Sprintf("%s_%s_%s", candidateName, timestamp, sessionID)
 	sessionDir := filepath.Join(baseDir, sessionDirName)
 
-	// Create session directory
-	if err := os.MkdirAll(sessionDir, 0755); err != nil {
+	// Create session directory with restricted permissions (root only)
+	// Mode 0700 = only owner (root) can read/write/execute
+	// Prevents candidate from reading logs
+	if err := os.MkdirAll(sessionDir, 0700); err != nil {
 		return nil, fmt.Errorf("failed to create session directory: %w", err)
 	}
 
@@ -119,7 +122,8 @@ func (m *Manager) SaveMetadata() error {
 		return fmt.Errorf("failed to marshal metadata: %w", err)
 	}
 
-	if err := os.WriteFile(metadataPath, data, 0644); err != nil {
+	// Write with restricted permissions (root only)
+	if err := os.WriteFile(metadataPath, data, 0600); err != nil {
 		return fmt.Errorf("failed to write metadata: %w", err)
 	}
 
@@ -142,6 +146,25 @@ func (m *Manager) Complete() error {
 		return fmt.Errorf("failed to save final metadata: %w", err)
 	}
 
+	// Protect all session files from tampering
+	// Make metadata, analysis, and commands read-only
+	protectedFiles := []string{
+		"metadata.json",
+		"analysis.json",
+		"commands.log",
+	}
+
+	for _, filename := range protectedFiles {
+		filePath := m.GetFilePath(filename)
+		if _, err := os.Stat(filePath); err == nil {
+			// File exists, make it read-only (owner only)
+			if err := os.Chmod(filePath, 0400); err != nil {
+				log.Printf("Warning: Could not protect %s: %v", filename, err)
+			}
+		}
+	}
+
+	log.Println("Session: All files protected (read-only, root access only)")
 	return nil
 }
 
