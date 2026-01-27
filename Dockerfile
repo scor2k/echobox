@@ -30,19 +30,62 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build \
 # Stage 2: Runtime
 FROM alpine:3.19
 
-# Install runtime dependencies
+# Install comprehensive SRE troubleshooting tools
 RUN apk add --no-cache \
+    # Shell and basics
     bash \
+    bash-completion \
     ca-certificates \
+    coreutils \
+    # Network tools
     curl \
+    wget \
+    netcat-openbsd \
+    bind-tools \
+    nmap \
+    nmap-scripts \
+    tcpdump \
+    iproute2 \
+    iputils \
+    net-tools \
+    iftop \
+    # System debugging
+    strace \
+    lsof \
+    htop \
+    iotop \
+    procps \
+    sysstat \
+    # Editors
     vim \
     nano \
+    # Development
+    python3 \
+    py3-pip \
+    git \
+    make \
+    # Text processing
     jq \
-    htop \
-    net-tools \
-    procps \
+    grep \
+    sed \
+    gawk \
+    # File tools
     util-linux \
+    findutils \
+    tree \
+    zip \
+    unzip \
+    tar \
+    # Monitoring
+    logrotate \
+    rsync \
     && rm -rf /var/cache/apk/*
+
+# Install common Python packages for scripting
+RUN pip3 install --no-cache-dir --break-system-packages \
+    requests \
+    pyyaml \
+    && rm -rf ~/.cache/pip
 
 # Create base directories
 # Note: Home directories for random UIDs created dynamically by app
