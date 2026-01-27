@@ -410,23 +410,46 @@ See [RECORDING.md](RECORDING.md) for complete documentation.
 
 ## Interview Tasks
 
-Three sample SRE tasks included in `tasks/` directory:
+**Three production-ready SRE tasks** automatically loaded in candidate's home:
 
-1. **Debugging** (`tasks/01-debugging/`): Fix a broken web application
-2. **Incident Response** (`tasks/02-incident-response/`): Investigate high CPU usage
-3. **Automation** (`tasks/03-automation/`): Write log analysis script
+1. **"Saskatoon"** - Log Analysis: Find top IP in nginx access.log
+2. **"Marrakech"** - Word Frequency: Find 2nd most common word (case-insensitive)
+3. **"Kampala"** - Broken Scripts: Fix scripts that won't execute (DOS line endings)
 
-See [tasks/README.md](tasks/README.md) for candidate instructions.
+**Candidate sees**:
+- `~/INTERVIEW_TASKS.txt` - Complete instructions
+- Task data files in home directory
+- `~/solutions/` - Save answers here
+
+**Solutions automatically captured** to `sessions/*/solutions/` for review!
+
+### Modifying Tasks (No Rebuild Required!)
+
+```bash
+# Edit task files
+vim tasks/INTERVIEW_TASKS.txt
+vim tasks/task-data/nginx-access.log
+
+# Restart (no build!)
+docker compose down
+docker compose up -d echobox-prod
+```
+
+Tasks are **mounted as volume** - changes apply instantly!
+
+See [tasks/HOW_TO_MODIFY_TASKS.md](tasks/HOW_TO_MODIFY_TASKS.md) for complete guide.
 
 ## Documentation
 
 - **[README.md](README.md)** - This file (overview and quick start)
 - **[QUICKSTART.md](QUICKSTART.md)** - Fast mode guide (2-minute setup, shortcuts, workflows)
-- **[DOCKER.md](DOCKER.md)** - Complete Docker deployment guide (511 lines)
-- **[SECURITY.md](SECURITY.md)** - Security model and best practices (401 lines)
+- **[DOCKER.md](DOCKER.md)** - Complete Docker deployment guide
+- **[SECURITY.md](SECURITY.md)** - Security model and best practices
 - **[RECORDING.md](RECORDING.md)** - Session recording details
 - **[TIMEOUTS.md](TIMEOUTS.md)** - Timeout configuration reference
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions (560 lines)
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[TOOLS.md](TOOLS.md)** - 40+ installed SRE tools reference
+- **[tasks/HOW_TO_MODIFY_TASKS.md](tasks/HOW_TO_MODIFY_TASKS.md)** - Task modification guide
 
 ## Testing
 
