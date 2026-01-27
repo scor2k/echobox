@@ -61,13 +61,13 @@
             sendResize();
         });
 
-        // Prevent default paste behavior - multiple layers
+        // Prevent default paste behavior - multiple layers (silent blocking)
         term.attachCustomKeyEventHandler((event) => {
             // Block Ctrl+V and Cmd+V
             if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
                 event.preventDefault();
                 event.stopPropagation();
-                showNotification('Paste is disabled for this assessment');
+                // Silent block - no notification shown
                 logAntiCheatEvent('paste_attempt', { source: 'keyboard_shortcut' });
                 return false;
             }
@@ -78,7 +78,7 @@
         terminalEl.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            showNotification('Context menu is disabled');
+            // Silent block - no notification shown
             return false;
         }, true); // Use capture phase
 
@@ -87,7 +87,7 @@
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
-            showNotification('Paste is disabled for this assessment');
+            // Silent block - no notification shown
             logAntiCheatEvent('paste_attempt', { source: 'paste_event' });
             return false;
         };
@@ -103,7 +103,7 @@
         if (navigator.clipboard) {
             const originalReadText = navigator.clipboard.readText;
             navigator.clipboard.readText = function() {
-                showNotification('Clipboard access is disabled');
+                // Silent block - no notification shown
                 logAntiCheatEvent('paste_attempt', { source: 'clipboard_api' });
                 return Promise.reject(new Error('Clipboard access disabled'));
             };
@@ -113,7 +113,7 @@
         const blockDragDrop = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            showNotification('Drag and drop is disabled');
+            // Silent block - no notification shown
             logAntiCheatEvent('paste_attempt', { source: 'drag_drop' });
             return false;
         };
@@ -140,7 +140,7 @@
 
             // BLOCK rapid input that suggests paste (>20 chars in single event)
             if (data.length > 20) {
-                showNotification('Paste blocked - large input detected');
+                // Silent block - no notification shown
                 logAntiCheatEvent('paste_blocked', {
                     chars: data.length,
                     source: 'large_input_block'
@@ -151,7 +151,7 @@
 
             // Check for rapid input (>30 chars in <100ms suggests paste)
             if (inputBuffer.length > 30 && timeDiff < 100) {
-                showNotification('Rapid input detected - please type manually');
+                // Silent block - no notification shown
                 logAntiCheatEvent('rapid_input', {
                     chars: inputBuffer.length,
                     time_ms: timeDiff
