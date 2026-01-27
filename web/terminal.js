@@ -61,11 +61,14 @@
             sendResize();
         });
 
-        // Prevent default paste behavior
+        // Prevent default paste behavior - multiple layers
         term.attachCustomKeyEventHandler((event) => {
             // Block Ctrl+V and Cmd+V
             if ((event.ctrlKey || event.metaKey) && event.key === 'v') {
+                event.preventDefault();
+                event.stopPropagation();
                 showNotification('Paste is disabled for this assessment');
+                logAntiCheatEvent('paste_attempt', { source: 'keyboard_shortcut' });
                 return false;
             }
             return true;
@@ -74,17 +77,50 @@
         // Prevent right-click paste
         terminalEl.addEventListener('contextmenu', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             showNotification('Context menu is disabled');
             return false;
-        });
+        }, true); // Use capture phase
 
-        // Prevent paste events
-        terminalEl.addEventListener('paste', (e) => {
+        // Prevent paste events - multiple listeners for coverage
+        const blockPaste = (e) => {
             e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
             showNotification('Paste is disabled for this assessment');
             logAntiCheatEvent('paste_attempt', { source: 'paste_event' });
             return false;
-        });
+        };
+
+        // Add to terminal element
+        terminalEl.addEventListener('paste', blockPaste, true); // Capture phase
+        terminalEl.addEventListener('paste', blockPaste, false); // Bubble phase
+
+        // Add to document level (catches all paste attempts)
+        document.addEventListener('paste', blockPaste, true);
+
+        // Override clipboard API
+        if (navigator.clipboard) {
+            const originalReadText = navigator.clipboard.readText;
+            navigator.clipboard.readText = function() {
+                showNotification('Clipboard access is disabled');
+                logAntiCheatEvent('paste_attempt', { source: 'clipboard_api' });
+                return Promise.reject(new Error('Clipboard access disabled'));
+            };
+        }
+
+        // Block drag and drop (another paste method)
+        const blockDragDrop = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            showNotification('Drag and drop is disabled');
+            logAntiCheatEvent('paste_attempt', { source: 'drag_drop' });
+            return false;
+        };
+
+        terminalEl.addEventListener('drop', blockDragDrop, true);
+        terminalEl.addEventListener('dragover', blockDragDrop, true);
+        document.addEventListener('drop', blockDragDrop, true);
 
         // Detect rapid input (potential paste)
         let inputBuffer = [];
@@ -102,6 +138,17 @@
             inputBuffer.push(data);
             lastInputTime = now;
 
+            // BLOCK rapid input that suggests paste (>20 chars in single event)
+            if (data.length > 20) {
+                showNotification('Paste blocked - large input detected');
+                logAntiCheatEvent('paste_blocked', {
+                    chars: data.length,
+                    source: 'large_input_block'
+                });
+                // Don't send to server - BLOCKED!
+                return;
+            }
+
             // Check for rapid input (>30 chars in <100ms suggests paste)
             if (inputBuffer.length > 30 && timeDiff < 100) {
                 showNotification('Rapid input detected - please type manually');
@@ -109,9 +156,11 @@
                     chars: inputBuffer.length,
                     time_ms: timeDiff
                 });
+                // Don't send to server - BLOCKED!
+                return;
             }
 
-            // Send to server
+            // Send to server (only if passed all checks)
             if (connected && ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(data);
             }
