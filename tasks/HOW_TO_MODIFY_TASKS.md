@@ -94,6 +94,32 @@ unix2dos tasks/task-data/deploy/*.sh
 **Current issue**: CRLF line endings
 **Fix**: dos2unix, sed 's/\r$//', or tr -d '\r'
 
+### Task 4: Berlin (Binary Detective)
+
+**Files**: `tasks/task-data/mystery` (ARM64), `tasks/task-data/mystery-amd64` (x86_64)
+
+**Issue**: Binary exits immediately (looks for .mystery.lock file)
+
+**To change**:
+```bash
+# Rebuild with different requirement
+cd tasks/task-data/mystery-src
+vim main.go
+# Change lockFile := ".mystery.lock" to something else
+# e.g., lockFile := ".config/app.conf"
+
+# Rebuild for both architectures
+GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o ../mystery .
+GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ../mystery-amd64 .
+cd ../../..
+
+# Restart container
+docker compose down && docker compose up -d
+```
+
+**Current requirement**: `.mystery.lock` file in current directory
+**Fix**: `touch .mystery.lock`
+
 ---
 
 ## Creating New Tasks
@@ -207,6 +233,33 @@ cat frankenstein.txt | tr '[:upper:]' '[:lower:]' | tr -d '[:punct:]' | \
 # Or: tr -d '\r' < deploy.sh > deploy.sh.fixed && mv deploy.sh.fixed deploy.sh
 ```
 
+### Task 4: Berlin (Binary Detective)
+```bash
+# Investigation:
+strace ./mystery 2>&1 | grep -E "open|stat|access"
+# Shows: stat(".mystery.lock", ...) = -1 ENOENT (No such file or directory)
+
+strings mystery | grep -i lock
+# Shows: ".mystery.lock"
+
+# Solution:
+touch .mystery.lock
+./mystery
+# Success! Binary runs
+
+# Expected output:
+# Mystery Application v1.0
+# Status: Running successfully
+# Lock file found: .mystery.lock
+# Service started on port 9999
+
+# Answer explanation:
+# The binary checks for .mystery.lock file in current directory
+# Using strace showed stat(".mystery.lock") failing with ENOENT
+# Creating the file allows the binary to start
+# This simulates real-world debugging of unknown binaries
+```
+
 ---
 
 ## Best Practices
@@ -299,6 +352,10 @@ cat $SESSION/solutions/marrakech.txt
 # Task 3
 cat $SESSION/solutions/kampala.txt
 # Should explain: DOS line endings, fix with dos2unix/sed/tr
+
+# Task 4
+cat $SESSION/solutions/berlin.txt
+# Should explain: Used strace, found .mystery.lock missing, created it with touch
 ```
 
 ---

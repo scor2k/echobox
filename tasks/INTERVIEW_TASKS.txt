@@ -98,6 +98,46 @@ HINTS:
 - After fixing, verify with: ./deploy.sh
 
 ═══════════════════════════════════════════════════════════════
+TASK 4: "Berlin" — Binary Detective
+═══════════════════════════════════════════════════════════════
+
+OBJECTIVE:
+Fix a mysterious binary that crashes without explanation.
+
+SITUATION:
+A binary called `mystery` in your home directory crashes immediately
+when you run it. No error message, no logs, just exit code 1.
+
+You DON'T have the source code. You must use debugging tools.
+
+GIVEN:
+- Binary at: ~/mystery
+
+REQUIREMENTS:
+1. Determine WHY the binary crashes (use debugging tools!)
+2. Fix the issue so the binary runs successfully
+3. Save your investigation and solution to: ~/solutions/berlin.txt
+
+Your report should include:
+- What tools did you use to investigate?
+- What was the binary looking for?
+- How did you fix it?
+- What was the final result?
+
+HINTS:
+- Try running it first: ./mystery
+- Use strace to see system calls: strace ./mystery
+- Use strings to see readable text: strings mystery
+- Check what files it tries to access
+- The fix might be creating a missing file
+
+EXPECTED OUTPUT:
+After fixing, ./mystery should print something like:
+  Mystery Application v1.0
+  Status: Running successfully
+  ...
+
+═══════════════════════════════════════════════════════════════
 SUBMISSION
 ═══════════════════════════════════════════════════════════════
 
@@ -106,6 +146,7 @@ Your ~/solutions/ directory should contain:
   ~/solutions/saskatoon.txt   - The top IP address
   ~/solutions/marrakech.txt   - The second most frequent word (UPPERCASE)
   ~/solutions/kampala.txt     - Your explanation of the fix
+  ~/solutions/berlin.txt      - Your investigation and fix for mystery binary
 
 All files in ~/solutions/ will be automatically captured when you
 finish the session.
