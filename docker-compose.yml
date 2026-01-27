@@ -27,9 +27,15 @@ services:
     # Resource limits
     mem_limit: 512m
     cpus: 0.5
-    # Security settings
+    # Security settings (required for dual-user architecture)
     security_opt:
       - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
     # Don't restart on exit (single-use container)
     restart: "no"
     # Optional: Network isolation (uncomment to isolate)

@@ -65,7 +65,15 @@ RUN mkdir -p /tasks && \
 
 # /home/candidate - owned by candidate (for task solutions)
 RUN mkdir -p /home/candidate/solutions && \
-    chown -R candidate:candidate /home/candidate
+    chown -R candidate:candidate /home/candidate && \
+    chmod 755 /home/candidate
+
+# Verify user setup
+RUN echo "Verifying user configuration..." && \
+    id candidate && \
+    id echobox && \
+    ls -la /home/candidate && \
+    echo "User setup complete"
 
 # Set working directory
 WORKDIR /app

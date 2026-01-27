@@ -178,6 +178,10 @@ docker-run: docker-build ## Build and run Docker container
 		--memory="512m" \
 		--cpus="0.5" \
 		--security-opt=no-new-privileges:true \
+		--cap-drop=ALL \
+		--cap-add=CHOWN \
+		--cap-add=SETUID \
+		--cap-add=SETGID \
 		--name echobox-dev \
 		echobox:latest
 	@echo "$(COLOR_YELLOW)URL: http://localhost:$(DOCKER_PORT)$(COLOR_RESET)"
