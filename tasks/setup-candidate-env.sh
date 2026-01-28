@@ -61,7 +61,7 @@ Good luck!
 MOTD
 
 # Standard bash settings
-export PS1='\[\033[01;32m\]\u@interview\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+export PS1='\[\033[01;32m\]candidate@interview\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 export EDITOR=vim
 alias ll='ls -la'
 alias l='ls -CF'
