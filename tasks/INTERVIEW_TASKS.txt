@@ -20,7 +20,7 @@ OBJECTIVE:
 Find the IP address that made the most requests in an nginx access log.
 
 GIVEN:
-- nginx access log at: /var/log/nginx/access.log
+- nginx access log at: ~/nginx-access.txt
 
 REQUIREMENTS:
 1. Analyze the log file
