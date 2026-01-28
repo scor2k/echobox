@@ -119,8 +119,7 @@ func defaultMOTD() string {
 Welcome! You have been connected to an isolated interview environment.
 
 INSTRUCTIONS:
-• Complete the tasks in /tasks/ directory
-• Read /tasks/README.md for detailed instructions
+• Read ~/INTERVIEW_TASKS.txt for your assignments
 • Save your solutions in ~/solutions/
 • Your session is being recorded for evaluation
 • Use the "Finish" button when you're done
@@ -130,7 +129,7 @@ NOTES:
 • If you lose connection, refresh to reconnect
 • All commands and keystrokes are logged
 
-Good luck! 🚀
+Good luck!
 `
 }
 

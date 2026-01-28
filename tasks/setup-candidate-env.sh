@@ -24,6 +24,51 @@ fi
 rm -f "$CANDIDATE_HOME/mystery-amd64" 2>/dev/null || true
 chmod +x "$CANDIDATE_HOME/mystery" 2>/dev/null || true
 
+# Create .bash_profile to source .bashrc
+cat > "$CANDIDATE_HOME/.bash_profile" << 'PROFILE'
+# Source .bashrc if it exists
+if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+fi
+PROFILE
+
+# Create .bashrc with welcome message
+cat > "$CANDIDATE_HOME/.bashrc" << 'BASHRC'
+# Candidate .bashrc
+
+# Show welcome message on login
+cat << 'MOTD'
+
+╔══════════════════════════════════════════════════════════════╗
+║                  SRE TECHNICAL INTERVIEW                     ║
+╚══════════════════════════════════════════════════════════════╝
+
+Welcome! You have been connected to an isolated interview environment.
+
+INSTRUCTIONS:
+  - Read ~/INTERVIEW_TASKS.txt for your assignments
+  - Save your solutions in ~/solutions/
+  - Your session is being recorded for evaluation
+  - Use the "Finish" button when you're done
+
+NOTES:
+  - Copy-paste is disabled for assessment integrity
+  - If you lose connection, refresh to reconnect
+  - All commands and keystrokes are logged
+
+Good luck!
+
+MOTD
+
+# Standard bash settings
+export PS1='\[\033[01;32m\]\u@interview\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+export EDITOR=vim
+alias ll='ls -la'
+alias l='ls -CF'
+
+cd ~
+BASHRC
+
 # Set ownership to the candidate UID
 CANDIDATE_UID=$(stat -c %u "$CANDIDATE_HOME" 2>/dev/null || stat -f %u "$CANDIDATE_HOME" 2>/dev/null || echo "1000")
 chown -R "$CANDIDATE_UID:$CANDIDATE_UID" "$CANDIDATE_HOME" 2>/dev/null || true
