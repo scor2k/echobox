@@ -87,7 +87,7 @@
             return false;
         }, true); // Use capture phase
 
-        // Prevent paste events - multiple listeners for coverage
+        // Prevent paste events - only within terminal
         const blockPaste = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -97,24 +97,11 @@
             return false;
         };
 
-        // Add to terminal element
+        // Add to terminal element only
         terminalEl.addEventListener('paste', blockPaste, true); // Capture phase
         terminalEl.addEventListener('paste', blockPaste, false); // Bubble phase
 
-        // Add to document level (catches all paste attempts)
-        document.addEventListener('paste', blockPaste, true);
-
-        // Override clipboard API
-        if (navigator.clipboard) {
-            const originalReadText = navigator.clipboard.readText;
-            navigator.clipboard.readText = function() {
-                // Silent block - no notification shown
-                logAntiCheatEvent('paste_attempt', { source: 'clipboard_api' });
-                return Promise.reject(new Error('Clipboard access disabled'));
-            };
-        }
-
-        // Block drag and drop (another paste method)
+        // Block drag and drop on terminal only
         const blockDragDrop = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -125,7 +112,6 @@
 
         terminalEl.addEventListener('drop', blockDragDrop, true);
         terminalEl.addEventListener('dragover', blockDragDrop, true);
-        document.addEventListener('drop', blockDragDrop, true);
 
         // Detect rapid input (potential paste)
         let inputBuffer = [];
