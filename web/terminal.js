@@ -8,6 +8,7 @@
     let fitAddon = null;
     let connected = false;
     let sessionEnded = false;
+    let sessionPassword = null;
 
     // DOM elements
     const terminalEl = document.getElementById('terminal');
@@ -17,6 +18,10 @@
     const modal = document.getElementById('confirm-modal');
     const modalCancel = document.getElementById('modal-cancel');
     const modalConfirm = document.getElementById('modal-confirm');
+    const passwordModal = document.getElementById('password-modal');
+    const passwordInput = document.getElementById('password-input');
+    const passwordSubmit = document.getElementById('password-submit');
+    const passwordError = document.getElementById('password-error');
 
     // Initialize terminal
     function initTerminal() {
@@ -192,8 +197,13 @@
 
     // Initialize WebSocket
     function initWebSocket() {
+        if (!sessionPassword) {
+            console.error('No password set, cannot connect');
+            return;
+        }
+
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = protocol + '//' + window.location.host + '/ws';
+        const wsUrl = protocol + '//' + window.location.host + '/ws?password=' + encodeURIComponent(sessionPassword);
 
         ws = new WebSocket(wsUrl);
 
@@ -201,6 +211,9 @@
             connected = true;
             updateStatus('connected', 'Connected');
             finishBtn.disabled = false;
+
+            // Hide password modal on successful connection
+            passwordModal.classList.remove('show');
 
             // Send initial resize
             sendResize();
@@ -259,6 +272,13 @@
 
         ws.onerror = (error) => {
             console.error('WebSocket error:', error);
+
+            // If we haven't connected yet, it's likely an auth failure
+            if (!connected) {
+                handleConnectionError();
+                return;
+            }
+
             updateStatus('disconnected', 'Connection Error');
         };
 
@@ -402,15 +422,57 @@
         }
     });
 
+    // Password modal handlers
+    function submitPassword() {
+        const password = passwordInput.value.trim();
+        if (!password) {
+            passwordError.textContent = 'Please enter a password.';
+            passwordError.style.display = 'block';
+            return;
+        }
+
+        sessionPassword = password;
+        passwordError.style.display = 'none';
+
+        // Try to connect with this password
+        initWebSocket();
+    }
+
+    passwordSubmit.addEventListener('click', submitPassword);
+    passwordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            submitPassword();
+        }
+    });
+
+    // Store password for reconnection
+    function getSessionPassword() {
+        return sessionPassword;
+    }
+    window.getSessionPassword = getSessionPassword;
+
+    // Handle WebSocket errors (wrong password)
+    function handleConnectionError() {
+        sessionPassword = null;
+        passwordModal.classList.add('show');
+        passwordError.textContent = 'Invalid password. Please try again.';
+        passwordError.style.display = 'block';
+        passwordInput.value = '';
+        passwordInput.focus();
+        updateStatus('disconnected', 'Authentication Failed');
+    }
+
     // Initialize everything when DOM is ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
             initTerminal();
-            initWebSocket();
+            // Don't connect yet - wait for password
+            passwordInput.focus();
         });
     } else {
         initTerminal();
-        initWebSocket();
+        // Don't connect yet - wait for password
+        passwordInput.focus();
     }
 
 })();

@@ -21,6 +21,19 @@
         </div>
     </div>
 
+    <!-- Password Modal -->
+    <div id="password-modal" class="modal show">
+        <div class="modal-content">
+            <h2>Session Password</h2>
+            <p>Enter the session password to connect:</p>
+            <input type="password" id="password-input" class="password-input" placeholder="Enter password" autofocus>
+            <p id="password-error" class="modal-warning" style="display: none;">Invalid password. Please try again.</p>
+            <div class="modal-actions">
+                <button id="password-submit" class="btn btn-primary">Connect</button>
+            </div>
+        </div>
+    </div>
+
     <div id="main-container">
         <div id="terminal-container">
             <div id="terminal"></div>

@@ -41,18 +41,20 @@ type WSHandler struct {
 	recorder     *terminal.Recorder
 	detector     *anticheat.Detector
 	sessionState *session.SessionState
+	password     string
 	mu           sync.RWMutex
 	shutdown     chan struct{}
 	finishSignal chan struct{}
 }
 
 // NewWSHandler creates a new WebSocket handler
-func NewWSHandler(pty *terminal.PTY, recorder *terminal.Recorder, detector *anticheat.Detector, sessionState *session.SessionState) *WSHandler {
+func NewWSHandler(pty *terminal.PTY, recorder *terminal.Recorder, detector *anticheat.Detector, sessionState *session.SessionState, password string) *WSHandler {
 	return &WSHandler{
 		pty:          pty,
 		recorder:     recorder,
 		detector:     detector,
 		sessionState: sessionState,
+		password:     password,
 		shutdown:     make(chan struct{}),
 		finishSignal: make(chan struct{}, 1),
 	}
@@ -75,6 +77,14 @@ func (h *WSHandler) FinishSignal() <-chan struct{} {
 
 // Handle handles WebSocket upgrade and communication
 func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
+	// Validate password before upgrading connection
+	password := r.URL.Query().Get("password")
+	if password != h.password {
+		log.Printf("WebSocket connection rejected: invalid password from %s", r.RemoteAddr)
+		http.Error(w, "Invalid password", http.StatusUnauthorized)
+		return
+	}
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("Failed to upgrade connection: %v", err)
@@ -82,7 +92,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	log.Printf("WebSocket connected: %s", r.RemoteAddr)
+	log.Printf("WebSocket connected (authenticated): %s", r.RemoteAddr)
 
 	// Mark connection in session state
 	if h.sessionState != nil {

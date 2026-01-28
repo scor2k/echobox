@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"log"
 	"os"
 	"os/signal"
@@ -15,10 +17,23 @@ import (
 	"github.com/akonyukov/echobox/internal/web"
 )
 
+// generatePassword creates a random 8-character hex password
+func generatePassword() string {
+	bytes := make([]byte, 4)
+	if _, err := rand.Read(bytes); err != nil {
+		// Fallback to timestamp-based if crypto/rand fails
+		return hex.EncodeToString([]byte(time.Now().String()[:4]))
+	}
+	return hex.EncodeToString(bytes)
+}
+
 func main() {
 	// Set up logging
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Println("Starting SRE Interview Terminal...")
+
+	// Generate session password
+	sessionPassword := generatePassword()
 
 	// Load configuration
 	cfg, err := config.Load()
@@ -28,6 +43,11 @@ func main() {
 
 	log.Printf("Configuration loaded: Candidate=%s, Port=%d, Timeout=%v",
 		cfg.CandidateName, cfg.Port, cfg.SessionTimeout)
+
+	// Print session password prominently
+	log.Println("========================================")
+	log.Printf("SESSION PASSWORD: %s", sessionPassword)
+	log.Println("========================================")
 
 	// Print MOTD
 	log.Println(cfg.MOTD)
@@ -65,8 +85,8 @@ func main() {
 
 	log.Printf("PTY created, shell: %s (UID: %d)", cfg.Shell, cfg.ShellUID)
 
-	// Create WebSocket handler with recorder, detector, and session state
-	wsHandler := web.NewWSHandler(pty, recorder, detector, sessionMgr.GetState())
+	// Create WebSocket handler with recorder, detector, session state, and password
+	wsHandler := web.NewWSHandler(pty, recorder, detector, sessionMgr.GetState(), sessionPassword)
 
 	log.Printf("Reconnection enabled - token: %s (valid for %v)",
 		sessionMgr.GetState().GetReconnectToken(),
