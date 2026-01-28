@@ -11,8 +11,11 @@ mkdir -p "$CANDIDATE_HOME/solutions"
 # Copy interview tasks file
 cp -f /tasks/INTERVIEW_TASKS.txt "$CANDIDATE_HOME/" 2>/dev/null || true
 
-# Copy all task-data files to candidate home
-cp -rf "$TASK_DIR"/* "$CANDIDATE_HOME/" 2>/dev/null || true
+# Copy task-data files to candidate home (excluding mystery-src)
+for item in "$TASK_DIR"/*; do
+    [ "$(basename "$item")" = "mystery-src" ] && continue
+    cp -rf "$item" "$CANDIDATE_HOME/" 2>/dev/null || true
+done
 
 # Handle architecture-specific mystery binary
 ARCH=$(uname -m)
