@@ -138,13 +138,6 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if n > 0 {
-				// Record terminal output
-				if h.recorder != nil {
-					if err := h.recorder.RecordOutput(buf[:n]); err != nil {
-						log.Printf("Failed to record output: %v", err)
-					}
-				}
-
 				// Update terminal buffer for reconnection
 				if h.sessionState != nil {
 					h.sessionState.UpdateTerminalBuffer(buf[:n])

@@ -182,8 +182,6 @@ func (m *Manager) calculateFileHashes() error {
 	// List of files to hash
 	files := []string{
 		"keystrokes.log",
-		"terminal.log",
-		"timing.log",
 		"websocket.log",
 		"events.log",
 		"commands.log",
